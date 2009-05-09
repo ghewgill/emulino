@@ -12,7 +12,7 @@ typedef unsigned short u16;
 typedef void (*Handler)(u16 instr);
 
 const size_t PROGRAM_SIZE_WORDS = 0x1000;
-const size_t DATA_SIZE_BYTES = 0x10000;
+const size_t DATA_SIZE_BYTES = 0x900;
 
 struct TData {
     union {
@@ -797,10 +797,12 @@ void do_SPM2_2(u16)
     unimplemented(__FUNCTION__);
 }
 
-void do_ST_X1(u16)
+void do_ST_X1(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(Data.X, Data.Reg[r]);
 }
 
 void do_ST_X2(u16 instr)
@@ -935,6 +937,9 @@ void TData::iowrite(u16 addr, u8 value)
 {
     //fprintf(stderr, "iowrite %04x %02x\n", addr, value);
     switch (addr) {
+    case 0x25:
+        fprintf(stderr, "PORTB: %02x\n", value);
+        break;
     case 0xc6:
         putchar(value);
         break;
@@ -986,7 +991,7 @@ int main(int, char *[])
     //FILE *f = fopen("../blinky/blinky.bin", "rb");
     //fread(Program, 2, PROGRAM_SIZE_WORDS, f);
     //fclose(f);
-    LoadHex("/Users/greg/arduino-0015/examples/Communication/ASCIITable/applet/ASCIITable.hex");
+    LoadHex("/Users/greg/arduino-0015/examples/Digital/Blink/applet/Blink.hex");
 
     PC = 0;
     Data.SP = DATA_SIZE_BYTES - 1;

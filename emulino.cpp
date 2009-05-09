@@ -13,44 +13,61 @@ typedef void (*Handler)(u16 instr);
 const size_t PROGRAM_SIZE_WORDS = 0x1000;
 const size_t DATA_SIZE_BYTES = 0x10000;
 
-typedef union {
-    struct {
-        // 0x00 - 0x1f
-        union {
-            u8 Reg[32];
-            struct {
-                u8 dummy1[24];
-                union {
-                    u16 RegW[4];
-                    struct {
-                        u16 r24;
-                        u16 X;
-                        u16 Y;
-                        u16 Z;
+struct TData {
+    union {
+        struct {
+            // 0x00 - 0x1f
+            union {
+                u8 Reg[32];
+                struct {
+                    u8 dummy1[24];
+                    union {
+                        u16 RegW[4];
+                        struct {
+                            u16 r24;
+                            u16 X;
+                            u16 Y;
+                            u16 Z;
+                        };
                     };
                 };
             };
+            u8 dummy2[0x5d-0x20]; // 0x20 - 0x5c
+            u16 SP __attribute__((packed)); // 0x5d - 0x5e
+            // 0x5f
+            union {
+                struct {
+                    bool C: 1;
+                    bool Z: 1;
+                    bool N: 1;
+                    bool V: 1;
+                    bool S: 1;
+                    bool H: 1;
+                    bool T: 1;
+                    bool I: 1;
+                };
+                u8 bits;
+            } SREG;
         };
-        u8 dummy2[0x5d-0x20]; // 0x20 - 0x5c
-        u16 SP __attribute__((packed)); // 0x5d - 0x5e
-        // 0x5f
-        union {
-            struct {
-                bool C: 1;
-                bool Z: 1;
-                bool N: 1;
-                bool V: 1;
-                bool S: 1;
-                bool H: 1;
-                bool T: 1;
-                bool I: 1;
-            };
-            u8 bits;
-        } SREG;
+        u8 _Bytes[DATA_SIZE_BYTES];
+        //u16 _Words[DATA_SIZE_BYTES/2];
     };
-    u8 Bytes[DATA_SIZE_BYTES];
-    u16 Words[DATA_SIZE_BYTES/2];
-} TData;
+    inline u8 read(u16 addr) {
+        if ((addr & 0xff00) == 0) {
+            ioread(addr);
+        }
+        return _Bytes[addr];
+    }
+    inline void write(u16 addr, u8 value) {
+        if ((addr & 0xff00) == 0) {
+            iowrite(addr, value);
+        } else {
+            _Bytes[addr] = value;
+        }
+    }
+    u8 ioread(u16 addr);
+    void iowrite(u16 addr, u8 value);
+};
 
 u16 Program[PROGRAM_SIZE_WORDS];
 TData Data;
@@ -59,7 +76,7 @@ u16 PC;
 inline void trace(const char *s)
 {
     #ifdef TRACE
-        puts(s);
+        fprintf(stderr, "%s\n", s);
     #endif
 }
 
@@ -345,7 +362,7 @@ void do_LD_Y4(u16 instr)
     // --q-qq-rrrrr-qqq
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 r = ((instr >> 4) & 0x1f);
-    Data.Reg[r] = Data.Bytes[Data.Y+q];
+    Data.Reg[r] = Data.read(Data.Y+q);
 }
 
 void do_LD_Z2(u16)
@@ -465,7 +482,7 @@ void do_OUT(u16 instr)
     // -----AArrrrrAAAA
     u16 A = (instr & 0xf) | ((instr >> 5) & 0x30);
     u16 r = ((instr >> 4) & 0x1f);
-    printf("OUT %x: %x\n", A, Data.Reg[r]);
+    Data.write(0x20 + A, Data.Reg[r]);
 }
 
 void do_POP(u16)
@@ -485,8 +502,8 @@ void do_RCALL(u16 instr)
     trace(__FUNCTION__);
     // ----kkkkkkkkkkkk
     u16 k = (instr & 0xfff);
-    Data.Words[Data.SP] = PC;
-    Data.SP -= 2;
+    Data.write(Data.SP--, PC >> 8);
+    Data.write(Data.SP--, PC & 0xff);
     PC += static_cast<s16>(k << 4) >> 4;
 }
 
@@ -627,7 +644,7 @@ void do_ST_Y4(u16 instr)
     // --q-qq-rrrrr-qqq
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 r = ((instr >> 4) & 0x1f);
-    Data.Bytes[Data.Y+q] = Data.Reg[r];
+    Data.write(Data.Y+q, Data.Reg[r]);
 }
 
 void do_ST_Z2(u16)
@@ -648,7 +665,7 @@ void do_ST_Z4(u16 instr)
     // --q-qq-rrrrr-qqq
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 r = ((instr >> 4) & 0x1f);
-    Data.Bytes[Data.Z+q] = Data.Reg[r];
+    Data.write(Data.Z+q, Data.Reg[r]);
 }
 
 void do_STS(u16)
@@ -693,18 +710,29 @@ void do_WDR(u16)
 
 #include "avr.inc"
 
+u8 TData::ioread(u16 addr)
+{
+    return _Bytes[addr];
+}
+
+void TData::iowrite(u16 addr, u8 value)
+{
+    fprintf(stderr, "iowrite %04x %02x\n", addr, value);
+}
+
 int main(int, char *[])
 {
     assert(sizeof(Data.SREG) == 1);
-    assert(reinterpret_cast<u8 *>(&Data.SP) - Data.Bytes == 0x5d);
-    assert(reinterpret_cast<u8 *>(&Data.SREG) - Data.Bytes == 0x5f);
+    assert(reinterpret_cast<u8 *>(&Data.SP) - Data._Bytes == 0x5d);
+    assert(reinterpret_cast<u8 *>(&Data.SREG) - Data._Bytes == 0x5f);
     FILE *f = fopen("../blinky/blinky.bin", "rb");
     fread(Program, 2, PROGRAM_SIZE_WORDS, f);
     fclose(f);
     PC = 0;
+    Data.SP = DATA_SIZE_BYTES - 1;
     for (;;) {
         #ifdef TRACE
-            printf("%04x ", PC*2);
+            fprintf(stderr, "%04x ", PC*2);
         #endif
         u16 instr = Program[PC];
         PC++;

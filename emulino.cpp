@@ -148,10 +148,17 @@ void do_AND(u16 instr)
     Data.SREG.Z = Data.Reg[d] == 0;
 }
 
-void do_ANDI(u16)
+void do_ANDI(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // ----KKKKddddKKKK
+    u16 K = (instr & 0xf) | ((instr >> 4) & 0xf0);
+    u16 d = 16 + ((instr >> 4) & 0xf);
+    u8 x = Data.Reg[d] &= K;
+    Data.SREG.S = (x & 0x80) != 0;
+    Data.SREG.V = 0;
+    Data.SREG.N = (x & 0x80) != 0;
+    Data.SREG.Z = x == 0;
 }
 
 void do_ASR(u16 instr)
@@ -935,10 +942,15 @@ u8 TData::ioread(u16 addr)
 
 void TData::iowrite(u16 addr, u8 value)
 {
-    //fprintf(stderr, "iowrite %04x %02x\n", addr, value);
+    if (addr != 0x5f) {
+        //fprintf(stderr, "iowrite %04x %02x\n", addr, value);
+    }
     switch (addr) {
     case 0x25:
         fprintf(stderr, "PORTB: %02x\n", value);
+        break;
+    case 0x2b:
+        fprintf(stderr, "PORTD: %02x\n", value);
         break;
     case 0xc6:
         putchar(value);
@@ -947,9 +959,28 @@ void TData::iowrite(u16 addr, u8 value)
     _Bytes[addr] = value;
 }
 
+inline uint64_t rdtsc()
+{
+    uint32_t lo, hi;
+    __asm__ __volatile__ (
+        "pushl %%ebx\n"
+        "xorl %%eax, %%eax\n"
+        "cpuid\n"
+        "rdtsc\n"
+        "popl %%ebx\n"
+        : "=a" (lo), "=d" (hi)
+        :
+        : "%ecx");
+    return (static_cast<uint64_t>(hi) << 32) | lo;
+}
+
 void LoadHex(const char *fn)
 {
     FILE *f = fopen(fn, "r");
+    if (f == NULL) {
+        perror(fn);
+        exit(1);
+    }
     char buf[100];
     bool eof = false;
     while (!eof && fgets(buf, sizeof(buf), f)) {
@@ -991,11 +1022,12 @@ int main(int, char *[])
     //FILE *f = fopen("../blinky/blinky.bin", "rb");
     //fread(Program, 2, PROGRAM_SIZE_WORDS, f);
     //fclose(f);
-    LoadHex("/Users/greg/arduino-0015/examples/Digital/Blink/applet/Blink.hex");
+    //LoadHex("/Users/greg/arduino-0015/examples/Communication/ASCIITable/applet/ASCIITable.hex");
+    LoadHex("/Users/greg/arduino-0015/examples/Digital/Loop/applet/Loop.hex");
 
     PC = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
-    u16 timer = 0;
+    uint64_t lasttick = 0;
     for (;;) {
         #ifdef TRACE
             for (int i = 0; i < 24; i++) {
@@ -1017,7 +1049,9 @@ int main(int, char *[])
         #endif
         u16 instr = Program[PC++];
         Instr[instr](instr);
-        if (Data.SREG.I && ++timer == 0) {
+        uint64_t t = rdtsc();
+        if (Data.SREG.I && t - lasttick > 1000000) {
+            lasttick = t;
             //fprintf(stderr, "tick\n");
             irq(16);
         }

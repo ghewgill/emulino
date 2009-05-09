@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 
 //#define TRACE
@@ -720,14 +721,52 @@ void TData::iowrite(u16 addr, u8 value)
     fprintf(stderr, "iowrite %04x %02x\n", addr, value);
 }
 
+void LoadHex(const char *fn)
+{
+    FILE *f = fopen(fn, "r");
+    char buf[100];
+    bool eof = false;
+    while (!eof && fgets(buf, sizeof(buf), f)) {
+        assert(buf[0] == ':');
+        u8 c = 0;
+        for (int i = 1; isalnum(buf[i]); i += 2) {
+            int x;
+            sscanf(buf+i, "%02x", &x);
+            c += x;
+        }
+        assert(c == 0);
+        int n, a, t;
+        sscanf(buf+1, "%02x%04x%02x", &n, &a, &t);
+        switch (t) {
+        case 0x00:
+            for (int i = 0; i < n; i++) {
+                int x;
+                sscanf(buf+9+i*2, "%02x", &x);
+                reinterpret_cast<u8 *>(Program)[a+i] = x;
+            }
+            break;
+        case 0x01:
+            eof = true;
+            break;
+        default:
+            fprintf(stderr, "unsupported hex type: %02x\n", t);
+            exit(1);
+        }
+    }
+    fclose(f);
+}
+
 int main(int, char *[])
 {
     assert(sizeof(Data.SREG) == 1);
     assert(reinterpret_cast<u8 *>(&Data.SP) - Data._Bytes == 0x5d);
     assert(reinterpret_cast<u8 *>(&Data.SREG) - Data._Bytes == 0x5f);
-    FILE *f = fopen("../blinky/blinky.bin", "rb");
-    fread(Program, 2, PROGRAM_SIZE_WORDS, f);
-    fclose(f);
+
+    //FILE *f = fopen("../blinky/blinky.bin", "rb");
+    //fread(Program, 2, PROGRAM_SIZE_WORDS, f);
+    //fclose(f);
+    LoadHex("/Users/greg/arduino-0015/examples/Communication/ASCIITable/applet/ASCIITable.hex");
+
     PC = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
     for (;;) {

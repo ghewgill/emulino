@@ -142,7 +142,7 @@ void do_AND(u16 instr)
     u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] &= Data.Reg[r];
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
@@ -156,7 +156,7 @@ void do_ANDI(u16 instr)
     u16 d = 16 + ((instr >> 4) & 0xf);
     u8 x = Data.Reg[d] &= K;
     Data.SREG.S = (x & 0x80) != 0;
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
 }
@@ -182,10 +182,13 @@ void do_BCLR(u16 instr)
     Data.SREG.bits &= ~(1 << s);
 }
 
-void do_BLD(u16)
+void do_BLD(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd-bbb
+    u16 d = ((instr >> 4) & 0x1f);
+    u16 b = (instr & 0x7);
+    Data.Reg[d] = (Data.Reg[d] & ~(1 << b)) | ((Data.SREG.T ? 1 : 0) << b);
 }
 
 void do_BRBC(u16 instr)
@@ -230,7 +233,7 @@ void do_BST(u16 instr)
     // -------ddddd-bbb
     u16 d = ((instr >> 4) & 0x1f);
     u16 b = (instr & 0x7);
-    Data.SREG.T = (Data.Reg[d] & (1 << b) != 0);
+    Data.SREG.T = ((Data.Reg[d] & (1 << b)) != 0);
 }
 
 void do_CALL(u16 instr)
@@ -244,10 +247,13 @@ void do_CALL(u16 instr)
     PC = k;
 }
 
-void do_CBI(u16)
+void do_CBI(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // --------AAAAAbbb
+    u16 A = ((instr >> 3) & 0x1f);
+    u16 b = (instr & 0x7);
+    Data.write(0x20+A, Data.read(0x20+A) & ~(1 << b));
 }
 
 void do_COM(u16 instr)
@@ -256,7 +262,7 @@ void do_COM(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = ~Data.Reg[d];
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
@@ -308,10 +314,16 @@ void do_CPI(u16 instr)
     Data.SREG.C = (((~Data.Reg[d] & K) | (K & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
 }
 
-void do_CPSE(u16)
+void do_CPSE(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // ------rdddddrrrr
+    u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
+    u16 d = ((instr >> 4) & 0x1f);
+    if (Data.Reg[d] == Data.Reg[r]) {
+        PC++;
+        // TODO: 2 word instructions
+    }
 }
 
 void do_DEC(u16 instr)
@@ -370,7 +382,7 @@ void do_EOR(u16 instr)
     u16 d = ((instr >> 4) & 0x1f);
     u8 x = Data.Reg[d] ^= Data.Reg[r];
     Data.SREG.S = (x & 0x80) != 0;
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
 }
@@ -416,10 +428,16 @@ void do_IN(u16 instr)
     Data.Reg[d] = Data.read(0x20 + A);
 }
 
-void do_INC(u16)
+void do_INC(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d]++;
+    Data.SREG.V = Data.Reg[d] == 0x80;
+    Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
+    Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
+    Data.SREG.Z = Data.Reg[d] == 0;
 }
 
 void do_JMP(u16 instr)
@@ -447,22 +465,28 @@ void do_LD_X2(u16 instr)
     Data.Reg[d] = Data.read(Data.X++);
 }
 
-void do_LD_X3(u16)
+void do_LD_X3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = Data.read(--Data.X);
 }
 
-void do_LD_Y2(u16)
+void do_LD_Y2(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = Data.read(Data.Y++);
 }
 
-void do_LD_Y3(u16)
+void do_LD_Y3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = Data.read(--Data.Y);
 }
 
 void do_LD_Y4(u16 instr)
@@ -482,10 +506,12 @@ void do_LD_Z2(u16 instr)
     Data.Reg[d] = Data.read(Data.Z++);
 }
 
-void do_LD_Z3(u16)
+void do_LD_Z3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = Data.read(--Data.Z);
 }
 
 void do_LD_Z4(u16 instr)
@@ -514,10 +540,10 @@ void do_LDS(u16 instr)
     Data.Reg[d] = Data.read(Program[PC++]);
 }
 
-void do_LPM_1(u16)
+void do_LPM_1(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    Data.Reg[0] = reinterpret_cast<u8 *>(Program)[Data.Z];
 }
 
 void do_LPM_2(u16 instr)
@@ -536,10 +562,17 @@ void do_LPM_3(u16 instr)
     Data.Reg[d] = reinterpret_cast<u8 *>(Program)[Data.Z++];
 }
 
-void do_LSR(u16)
+void do_LSR(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.SREG.C = Data.Reg[d] & 0x01;
+    Data.Reg[d] >>= 1;
+    Data.SREG.N = false;
+    Data.SREG.V = Data.SREG.N ^ Data.SREG.C;
+    Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
+    Data.SREG.Z = Data.Reg[d] == 0;
 }
 
 void do_MOV(u16 instr)
@@ -561,22 +594,43 @@ void do_MOVW(u16 instr)
     Data.Reg[d*2+1] = Data.Reg[r*2+1];
 }
 
-void do_MUL(u16)
+void do_MUL(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // ------rdddddrrrr
+    u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
+    u16 d = ((instr >> 4) & 0x1f);
+    u16 x = Data.Reg[d] * Data.Reg[r];
+    Data.Reg[1] = x >> 8;
+    Data.Reg[0] = x & 0xff;
+    Data.SREG.C = (x & 0x8000) != 0;
+    Data.SREG.Z = x == 0;
 }
 
-void do_MULS(u16)
+void do_MULS(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // --------ddddrrrr
+    u16 d = ((instr >> 4) & 0xf);
+    u16 r = (instr & 0xf);
+    s16 x = static_cast<s8>(Data.Reg[16+d]) * static_cast<s8>(Data.Reg[16+r]);
+    Data.Reg[1] = x >> 8;
+    Data.Reg[0] = x & 0xff;
+    Data.SREG.C = (x & 0x8000) != 0;
+    Data.SREG.Z = x == 0;
 }
 
-void do_MULSU(u16)
+void do_MULSU(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // ---------ddd-rrr
+    u16 d = ((instr >> 4) & 0x7);
+    u16 r = (instr & 0x7);
+    s16 x = static_cast<s8>(Data.Reg[16+d]) * Data.Reg[16+r];
+    Data.Reg[1] = x >> 8;
+    Data.Reg[0] = x & 0xff;
+    Data.SREG.C = (x & 0x8000) != 0;
+    Data.SREG.Z = x == 0;
 }
 
 void do_NEG(u16 instr)
@@ -606,7 +660,7 @@ void do_OR(u16 instr)
     u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] |= Data.Reg[r];
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
@@ -620,7 +674,7 @@ void do_ORI(u16 instr)
     u16 d = 16 + ((instr >> 4) & 0xf);
     u8 x = Data.Reg[d] |= K;
     Data.SREG.S = (x & 0x80) != 0;
-    Data.SREG.V = 0;
+    Data.SREG.V = false;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
 }
@@ -729,22 +783,37 @@ void do_SBCI(u16 instr)
     Data.Reg[d] = x;
 }
 
-void do_SBI(u16)
+void do_SBI(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // --------AAAAAbbb
+    u16 A = ((instr >> 3) & 0x1f);
+    u16 b = (instr & 0x7);
+    Data.write(0x20+A, Data.read(0x20+A) | (1 << b));
 }
 
-void do_SBIC(u16)
+void do_SBIC(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // --------AAAAAbbb
+    u16 A = ((instr >> 3) & 0x1f);
+    u16 b = (instr & 0x7);
+    if ((Data.read(0x20+A) & (1 << b)) == 0) {
+        PC++;
+        // TODO: 2 word instructions
+    }
 }
 
-void do_SBIS(u16)
+void do_SBIS(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // --------AAAAAbbb
+    u16 A = ((instr >> 3) & 0x1f);
+    u16 b = (instr & 0x7);
+    if ((Data.read(0x20+A) & (1 << b)) != 0) {
+        PC++;
+        // TODO: 2 word instructions
+    }
 }
 
 void do_SBIW(u16 instr)
@@ -820,22 +889,28 @@ void do_ST_X2(u16 instr)
     Data.write(Data.X++, Data.Reg[r]);
 }
 
-void do_ST_X3(u16)
+void do_ST_X3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(--Data.X, Data.Reg[r]);
 }
 
-void do_ST_Y2(u16)
+void do_ST_Y2(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(Data.Y++, Data.Reg[r]);
 }
 
-void do_ST_Y3(u16)
+void do_ST_Y3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(--Data.Y, Data.Reg[r]);
 }
 
 void do_ST_Y4(u16 instr)
@@ -847,16 +922,20 @@ void do_ST_Y4(u16 instr)
     Data.write(Data.Y+q, Data.Reg[r]);
 }
 
-void do_ST_Z2(u16)
+void do_ST_Z2(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(Data.Z++, Data.Reg[r]);
 }
 
-void do_ST_Z3(u16)
+void do_ST_Z3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------rrrrr----
+    u16 r = ((instr >> 4) & 0x1f);
+    Data.write(--Data.Z, Data.Reg[r]);
 }
 
 void do_ST_Z4(u16 instr)
@@ -908,10 +987,12 @@ void do_SUBI(u16 instr)
     Data.Reg[d] = x;
 }
 
-void do_SWAP(u16)
+void do_SWAP(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    // -------ddddd----
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = (Data.Reg[d] << 4) | (Data.Reg[d] >> 4);
 }
 
 void do_WDR(u16)
@@ -927,7 +1008,7 @@ void irq(int n)
     Data.write(Data.SP--, PC >> 8);
     Data.write(Data.SP--, PC & 0xff);
     PC = n << 1;
-    Data.SREG.I = 0;
+    Data.SREG.I = false;
 }
 
 u8 TData::ioread(u16 addr)

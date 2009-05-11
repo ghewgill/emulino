@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 //#define TRACE
 
@@ -1055,8 +1056,21 @@ inline uint64_t rdtsc()
     return (static_cast<uint64_t>(hi) << 32) | lo;
 }
 
+void LoadBinary(const char *fn)
+{
+    fprintf(stderr, "emulino: Loading binary image: %s\n", fn);
+    FILE *f = fopen(fn, "rb");
+    if (f == NULL) {
+        perror(fn);
+        exit(1);
+    }
+    fread(Program, 2, PROGRAM_SIZE_WORDS, f);
+    fclose(f);
+}
+
 void LoadHex(const char *fn)
 {
+    fprintf(stderr, "emulino: Loading hex image: %s\n", fn);
     FILE *f = fopen(fn, "r");
     if (f == NULL) {
         perror(fn);
@@ -1094,17 +1108,33 @@ void LoadHex(const char *fn)
     fclose(f);
 }
 
-int main(int, char *[])
+void Load(const char *fn)
+{
+    FILE *f = fopen(fn, "r");
+    char buf[100];
+    fgets(buf, sizeof(buf), f);
+    fclose(f);
+    int n;
+    if (sscanf(buf, ":%02x", &n) == 1 && static_cast<int>(strcspn(buf, "\r\n")) == 11+2*n) {
+        LoadHex(fn);
+    } else {
+        LoadBinary(fn);
+    }
+}
+
+int main(int argc, char *argv[])
 {
     assert(sizeof(Data.SREG) == 1);
     assert(reinterpret_cast<u8 *>(&Data.SP) - Data._Bytes == 0x5d);
     assert(reinterpret_cast<u8 *>(&Data.SREG) - Data._Bytes == 0x5f);
 
-    //FILE *f = fopen("../blinky/blinky.bin", "rb");
-    //fread(Program, 2, PROGRAM_SIZE_WORDS, f);
-    //fclose(f);
-    //LoadHex("/Users/greg/arduino-0015/examples/Communication/ASCIITable/applet/ASCIITable.hex");
-    LoadHex("/Users/greg/arduino-0015/examples/Digital/Loop/applet/Loop.hex");
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s image\n"
+                        "       image is a raw binary or hex image file\n", argv[0]);
+        exit(1);
+    }
+
+    Load(argv[1]);
 
     PC = 0;
     Data.SP = DATA_SIZE_BYTES - 1;

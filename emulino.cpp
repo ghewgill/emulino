@@ -11,7 +11,7 @@ typedef unsigned short u16;
 
 typedef void (*Handler)(u16 instr);
 
-const size_t PROGRAM_SIZE_WORDS = 0x1000;
+const size_t PROGRAM_SIZE_WORDS = 0x10000;
 const size_t DATA_SIZE_BYTES = 0x900;
 
 struct TData {

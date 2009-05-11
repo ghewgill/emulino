@@ -266,7 +266,7 @@ void do_COM(u16 instr)
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
-    Data.SREG.C = 1;
+    Data.SREG.C = true;
 }
 
 void do_CP(u16 instr)
@@ -359,7 +359,7 @@ void do_EIJMP(u16)
 void do_ELPM_1(u16)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    Data.Reg[0] = reinterpret_cast<u8 *>(Program)[Data.Z];
 }
 
 void do_ELPM_2(u16)
@@ -726,7 +726,7 @@ void do_RETI(u16)
     trace(__FUNCTION__);
     PC = Data.read(Data.SP+1) | (Data.read(Data.SP+2) << 8);
     Data.SP += 2;
-    Data.SREG.I = 1;
+    Data.SREG.I = true;
 }
 
 void do_RJMP(u16 instr)

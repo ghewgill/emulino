@@ -82,6 +82,14 @@ void write(u16 addr, u8 value)
     }
 }
 
+int doubleWordInstruction(u16 instr)
+{
+    return (instr & 0xfe0e) == 0x940e // CALL
+        || (instr & 0xfe0e) == 0x940c // JMP
+        || (instr & 0xfe0f) == 0x9000 // LDS
+        || (instr & 0xfe0f) == 0x9200; // STS
+}
+
 void trace(const char *s)
 {
     #ifdef TRACE
@@ -328,8 +336,10 @@ void do_CPSE(u16 instr)
     u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
     u16 d = ((instr >> 4) & 0x1f);
     if (Data.Reg[d] == Data.Reg[r]) {
+        if (doubleWordInstruction(Program[PC])) {
+            PC++;
+        }
         PC++;
-        // TODO: 2 word instructions
     }
 }
 
@@ -806,8 +816,10 @@ void do_SBIC(u16 instr)
     u16 A = ((instr >> 3) & 0x1f);
     u16 b = (instr & 0x7);
     if ((read(0x20+A) & (1 << b)) == 0) {
+        if (doubleWordInstruction(Program[PC])) {
+            PC++;
+        }
         PC++;
-        // TODO: 2 word instructions
     }
 }
 
@@ -818,8 +830,10 @@ void do_SBIS(u16 instr)
     u16 A = ((instr >> 3) & 0x1f);
     u16 b = (instr & 0x7);
     if ((read(0x20+A) & (1 << b)) != 0) {
+        if (doubleWordInstruction(Program[PC])) {
+            PC++;
+        }
         PC++;
-        // TODO: 2 word instructions
     }
 }
 
@@ -845,8 +859,10 @@ void do_SBRC(u16 instr)
     u16 r = ((instr >> 4) & 0x1f);
     u16 b = (instr & 0x7);
     if ((Data.Reg[r] & (1 << b)) == 0) {
+        if (doubleWordInstruction(Program[PC])) {
+            PC++;
+        }
         PC++;
-        // TODO: 2 word instructions
     }
 }
 
@@ -857,8 +873,10 @@ void do_SBRS(u16 instr)
     u16 r = ((instr >> 4) & 0x1f);
     u16 b = (instr & 0x7);
     if (Data.Reg[r] & (1 << b)) {
+        if (doubleWordInstruction(Program[PC])) {
+            PC++;
+        }
         PC++;
-        // TODO: 2 word instructions
     }
 }
 

@@ -58,15 +58,15 @@ typedef struct {
     };
 } TData;
 
-u8 ioread(u16 addr);
-void iowrite(u16 addr, u8 value);
+static u8 ioread(u16 addr);
+static void iowrite(u16 addr, u8 value);
 
 u16 Program[PROGRAM_SIZE_WORDS];
 TData Data;
 u16 PC;
 u32 Cycle;
 
-u8 read(u16 addr)
+static u8 read(u16 addr)
 {
     if ((addr & 0xff00) == 0) {
         return ioread(addr);
@@ -75,7 +75,7 @@ u8 read(u16 addr)
     }
 }
 
-void write(u16 addr, u8 value)
+static void write(u16 addr, u8 value)
 {
     if ((addr & 0xff00) == 0) {
         iowrite(addr, value);
@@ -84,7 +84,7 @@ void write(u16 addr, u8 value)
     }
 }
 
-int doubleWordInstruction(u16 instr)
+static int doubleWordInstruction(u16 instr)
 {
     return (instr & 0xfe0e) == 0x940e // CALL
         || (instr & 0xfe0e) == 0x940c // JMP
@@ -92,20 +92,20 @@ int doubleWordInstruction(u16 instr)
         || (instr & 0xfe0f) == 0x9200; // STS
 }
 
-void trace(const char *s)
+static void trace(const char *s)
 {
     #ifdef TRACE
         fprintf(stderr, "%s\n", s);
     #endif
 }
 
-void unimplemented(const char *s)
+static void unimplemented(const char *s)
 {
     fprintf(stderr, "unimplemented: %s\n", s);
     exit(1);
 }
 
-void do_ADC(u16 instr)
+static void do_ADC(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -122,7 +122,7 @@ void do_ADC(u16 instr)
     Cycle++;
 }
 
-void do_ADD(u16 instr)
+static void do_ADD(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -139,7 +139,7 @@ void do_ADD(u16 instr)
     Cycle++;
 }
 
-void do_ADIW(u16 instr)
+static void do_ADIW(u16 instr)
 {
     trace(__FUNCTION__);
     // --------KKddKKKK
@@ -155,7 +155,7 @@ void do_ADIW(u16 instr)
     Cycle += 2;
 }
 
-void do_AND(u16 instr)
+static void do_AND(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -169,7 +169,7 @@ void do_AND(u16 instr)
     Cycle++;
 }
 
-void do_ANDI(u16 instr)
+static void do_ANDI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -183,7 +183,7 @@ void do_ANDI(u16 instr)
     Cycle++;
 }
 
-void do_ASR(u16 instr)
+static void do_ASR(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -197,7 +197,7 @@ void do_ASR(u16 instr)
     Cycle++;
 }
 
-void do_BCLR(u16 instr)
+static void do_BCLR(u16 instr)
 {
     trace(__FUNCTION__);
     // ---------sss----
@@ -206,7 +206,7 @@ void do_BCLR(u16 instr)
     Cycle++;
 }
 
-void do_BLD(u16 instr)
+static void do_BLD(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd-bbb
@@ -216,7 +216,7 @@ void do_BLD(u16 instr)
     Cycle++;
 }
 
-void do_BRBC(u16 instr)
+static void do_BRBC(u16 instr)
 {
     trace(__FUNCTION__);
     // ------kkkkkkksss
@@ -229,7 +229,7 @@ void do_BRBC(u16 instr)
     Cycle++;
 }
 
-void do_BRBS(u16 instr)
+static void do_BRBS(u16 instr)
 {
     trace(__FUNCTION__);
     // ------kkkkkkksss
@@ -242,14 +242,14 @@ void do_BRBS(u16 instr)
     Cycle++;
 }
 
-void do_BREAK(u16 instr)
+static void do_BREAK(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
     Cycle++;
 }
 
-void do_BSET(u16 instr)
+static void do_BSET(u16 instr)
 {
     trace(__FUNCTION__);
     // ---------sss----
@@ -258,7 +258,7 @@ void do_BSET(u16 instr)
     Cycle++;
 }
 
-void do_BST(u16 instr)
+static void do_BST(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd-bbb
@@ -268,7 +268,7 @@ void do_BST(u16 instr)
     Cycle++;
 }
 
-void do_CALL(u16 instr)
+static void do_CALL(u16 instr)
 {
     trace(__FUNCTION__);
     // -------kkkkk---k
@@ -280,7 +280,7 @@ void do_CALL(u16 instr)
     Cycle += 4;
 }
 
-void do_CBI(u16 instr)
+static void do_CBI(u16 instr)
 {
     trace(__FUNCTION__);
     // --------AAAAAbbb
@@ -290,7 +290,7 @@ void do_CBI(u16 instr)
     Cycle += 2;
 }
 
-void do_COM(u16 instr)
+static void do_COM(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -304,7 +304,7 @@ void do_COM(u16 instr)
     Cycle++;
 }
 
-void do_CP(u16 instr)
+static void do_CP(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -320,7 +320,7 @@ void do_CP(u16 instr)
     Cycle++;
 }
 
-void do_CPC(u16 instr)
+static void do_CPC(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -336,7 +336,7 @@ void do_CPC(u16 instr)
     Cycle++;
 }
 
-void do_CPI(u16 instr)
+static void do_CPI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -352,7 +352,7 @@ void do_CPI(u16 instr)
     Cycle++;
 }
 
-void do_CPSE(u16 instr)
+static void do_CPSE(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -369,7 +369,7 @@ void do_CPSE(u16 instr)
     Cycle++;
 }
 
-void do_DEC(u16 instr)
+static void do_DEC(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -382,44 +382,44 @@ void do_DEC(u16 instr)
     Cycle++;
 }
 
-void do_DES(u16 instr)
+static void do_DES(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_EICALL(u16 instr)
+static void do_EICALL(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_EIJMP(u16 instr)
+static void do_EIJMP(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_ELPM_1(u16 instr)
+static void do_ELPM_1(u16 instr)
 {
     trace(__FUNCTION__);
     Data.Reg[0] = ((u8 *)Program)[Data.Z];
     Cycle += 3;
 }
 
-void do_ELPM_2(u16 instr)
+static void do_ELPM_2(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_ELPM_3(u16 instr)
+static void do_ELPM_3(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_EOR(u16 instr)
+static void do_EOR(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -433,25 +433,25 @@ void do_EOR(u16 instr)
     Cycle++;
 }
 
-void do_FMUL(u16 instr)
+static void do_FMUL(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_FMULS(u16 instr)
+static void do_FMULS(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_FMULSU(u16 instr)
+static void do_FMULSU(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
 }
 
-void do_ICALL(u16 instr)
+static void do_ICALL(u16 instr)
 {
     trace(__FUNCTION__);
     write(Data.SP--, PC >> 8);
@@ -460,14 +460,14 @@ void do_ICALL(u16 instr)
     Cycle += 3;
 }
 
-void do_IJMP(u16 instr)
+static void do_IJMP(u16 instr)
 {
     trace(__FUNCTION__);
     PC = Data.Z;
     Cycle += 2;
 }
 
-void do_IN(u16 instr)
+static void do_IN(u16 instr)
 {
     trace(__FUNCTION__);
     // -----AAdddddAAAA
@@ -477,7 +477,7 @@ void do_IN(u16 instr)
     Cycle++;
 }
 
-void do_INC(u16 instr)
+static void do_INC(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -490,7 +490,7 @@ void do_INC(u16 instr)
     Cycle++;
 }
 
-void do_JMP(u16 instr)
+static void do_JMP(u16 instr)
 {
     trace(__FUNCTION__);
     // -------kkkkk---k
@@ -500,7 +500,7 @@ void do_JMP(u16 instr)
     Cycle += 3;
 }
 
-void do_LD_X1(u16 instr)
+static void do_LD_X1(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -509,7 +509,7 @@ void do_LD_X1(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_X2(u16 instr)
+static void do_LD_X2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -518,7 +518,7 @@ void do_LD_X2(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_X3(u16 instr)
+static void do_LD_X3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -527,7 +527,7 @@ void do_LD_X3(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Y2(u16 instr)
+static void do_LD_Y2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -536,7 +536,7 @@ void do_LD_Y2(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Y3(u16 instr)
+static void do_LD_Y3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -545,7 +545,7 @@ void do_LD_Y3(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Y4(u16 instr)
+static void do_LD_Y4(u16 instr)
 {
     trace(__FUNCTION__);
     // --q-qq-ddddd-qqq
@@ -555,7 +555,7 @@ void do_LD_Y4(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Z2(u16 instr)
+static void do_LD_Z2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -564,7 +564,7 @@ void do_LD_Z2(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Z3(u16 instr)
+static void do_LD_Z3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -573,7 +573,7 @@ void do_LD_Z3(u16 instr)
     Cycle += 2;
 }
 
-void do_LD_Z4(u16 instr)
+static void do_LD_Z4(u16 instr)
 {
     trace(__FUNCTION__);
     // --q-qq-ddddd-qqq
@@ -583,7 +583,7 @@ void do_LD_Z4(u16 instr)
     Cycle += 2;
 }
 
-void do_LDI(u16 instr)
+static void do_LDI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -593,7 +593,7 @@ void do_LDI(u16 instr)
     Cycle++;
 }
 
-void do_LDS(u16 instr)
+static void do_LDS(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -602,14 +602,14 @@ void do_LDS(u16 instr)
     Cycle += 2;
 }
 
-void do_LPM_1(u16 instr)
+static void do_LPM_1(u16 instr)
 {
     trace(__FUNCTION__);
     Data.Reg[0] = ((u8 *)Program)[Data.Z];
     Cycle += 3;
 }
 
-void do_LPM_2(u16 instr)
+static void do_LPM_2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -618,7 +618,7 @@ void do_LPM_2(u16 instr)
     Cycle += 3;
 }
 
-void do_LPM_3(u16 instr)
+static void do_LPM_3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -627,7 +627,7 @@ void do_LPM_3(u16 instr)
     Cycle += 3;
 }
 
-void do_LSR(u16 instr)
+static void do_LSR(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -641,7 +641,7 @@ void do_LSR(u16 instr)
     Cycle++;
 }
 
-void do_MOV(u16 instr)
+static void do_MOV(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -651,7 +651,7 @@ void do_MOV(u16 instr)
     Cycle++;
 }
 
-void do_MOVW(u16 instr)
+static void do_MOVW(u16 instr)
 {
     trace(__FUNCTION__);
     // --------ddddrrrr
@@ -662,7 +662,7 @@ void do_MOVW(u16 instr)
     Cycle++;
 }
 
-void do_MUL(u16 instr)
+static void do_MUL(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -676,7 +676,7 @@ void do_MUL(u16 instr)
     Cycle += 2;
 }
 
-void do_MULS(u16 instr)
+static void do_MULS(u16 instr)
 {
     trace(__FUNCTION__);
     // --------ddddrrrr
@@ -690,7 +690,7 @@ void do_MULS(u16 instr)
     Cycle += 2;
 }
 
-void do_MULSU(u16 instr)
+static void do_MULSU(u16 instr)
 {
     trace(__FUNCTION__);
     // ---------ddd-rrr
@@ -704,7 +704,7 @@ void do_MULSU(u16 instr)
     Cycle += 2;
 }
 
-void do_NEG(u16 instr)
+static void do_NEG(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -720,13 +720,13 @@ void do_NEG(u16 instr)
     Cycle++;
 }
 
-void do_NOP(u16 instr)
+static void do_NOP(u16 instr)
 {
     trace(__FUNCTION__);
     Cycle++;
 }
 
-void do_OR(u16 instr)
+static void do_OR(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -740,7 +740,7 @@ void do_OR(u16 instr)
     Cycle++;
 }
 
-void do_ORI(u16 instr)
+static void do_ORI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -754,7 +754,7 @@ void do_ORI(u16 instr)
     Cycle++;
 }
 
-void do_OUT(u16 instr)
+static void do_OUT(u16 instr)
 {
     trace(__FUNCTION__);
     // -----AArrrrrAAAA
@@ -764,7 +764,7 @@ void do_OUT(u16 instr)
     Cycle++;
 }
 
-void do_POP(u16 instr)
+static void do_POP(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -773,7 +773,7 @@ void do_POP(u16 instr)
     Cycle += 2;
 }
 
-void do_PUSH(u16 instr)
+static void do_PUSH(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -782,7 +782,7 @@ void do_PUSH(u16 instr)
     Cycle += 2;
 }
 
-void do_RCALL(u16 instr)
+static void do_RCALL(u16 instr)
 {
     trace(__FUNCTION__);
     // ----kkkkkkkkkkkk
@@ -793,7 +793,7 @@ void do_RCALL(u16 instr)
     Cycle += 3;
 }
 
-void do_RET(u16 instr)
+static void do_RET(u16 instr)
 {
     trace(__FUNCTION__);
     PC = read(Data.SP+1) | (read(Data.SP+2) << 8);
@@ -801,7 +801,7 @@ void do_RET(u16 instr)
     Cycle += 4;
 }
 
-void do_RETI(u16 instr)
+static void do_RETI(u16 instr)
 {
     trace(__FUNCTION__);
     PC = read(Data.SP+1) | (read(Data.SP+2) << 8);
@@ -810,7 +810,7 @@ void do_RETI(u16 instr)
     Cycle += 4;
 }
 
-void do_RJMP(u16 instr)
+static void do_RJMP(u16 instr)
 {
     trace(__FUNCTION__);
     // ----kkkkkkkkkkkk
@@ -819,7 +819,7 @@ void do_RJMP(u16 instr)
     Cycle += 2;
 }
 
-void do_ROR(u16 instr)
+static void do_ROR(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -834,7 +834,7 @@ void do_ROR(u16 instr)
     Cycle++;
 }
 
-void do_SBC(u16 instr)
+static void do_SBC(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -851,7 +851,7 @@ void do_SBC(u16 instr)
     Cycle++;
 }
 
-void do_SBCI(u16 instr)
+static void do_SBCI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -868,7 +868,7 @@ void do_SBCI(u16 instr)
     Cycle++;
 }
 
-void do_SBI(u16 instr)
+static void do_SBI(u16 instr)
 {
     trace(__FUNCTION__);
     // --------AAAAAbbb
@@ -878,7 +878,7 @@ void do_SBI(u16 instr)
     Cycle += 2;
 }
 
-void do_SBIC(u16 instr)
+static void do_SBIC(u16 instr)
 {
     trace(__FUNCTION__);
     // --------AAAAAbbb
@@ -895,7 +895,7 @@ void do_SBIC(u16 instr)
     Cycle++;
 }
 
-void do_SBIS(u16 instr)
+static void do_SBIS(u16 instr)
 {
     trace(__FUNCTION__);
     // --------AAAAAbbb
@@ -912,7 +912,7 @@ void do_SBIS(u16 instr)
     Cycle++;
 }
 
-void do_SBIW(u16 instr)
+static void do_SBIW(u16 instr)
 {
     trace(__FUNCTION__);
     // --------KKddKKKK
@@ -928,7 +928,7 @@ void do_SBIW(u16 instr)
     Cycle += 2;
 }
 
-void do_SBRC(u16 instr)
+static void do_SBRC(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr-bbb
@@ -945,7 +945,7 @@ void do_SBRC(u16 instr)
     Cycle++;
 }
 
-void do_SBRS(u16 instr)
+static void do_SBRS(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr-bbb
@@ -962,28 +962,28 @@ void do_SBRS(u16 instr)
     Cycle++;
 }
 
-void do_SLEEP(u16 instr)
+static void do_SLEEP(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
     Cycle++;
 }
 
-void do_SPM2_1(u16 instr)
+static void do_SPM2_1(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
     // unknown cycles
 }
 
-void do_SPM2_2(u16 instr)
+static void do_SPM2_2(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
     // unknown cycles
 }
 
-void do_ST_X1(u16 instr)
+static void do_ST_X1(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -992,7 +992,7 @@ void do_ST_X1(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_X2(u16 instr)
+static void do_ST_X2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1001,7 +1001,7 @@ void do_ST_X2(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_X3(u16 instr)
+static void do_ST_X3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1010,7 +1010,7 @@ void do_ST_X3(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Y2(u16 instr)
+static void do_ST_Y2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1019,7 +1019,7 @@ void do_ST_Y2(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Y3(u16 instr)
+static void do_ST_Y3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1028,7 +1028,7 @@ void do_ST_Y3(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Y4(u16 instr)
+static void do_ST_Y4(u16 instr)
 {
     trace(__FUNCTION__);
     // --q-qq-rrrrr-qqq
@@ -1038,7 +1038,7 @@ void do_ST_Y4(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Z2(u16 instr)
+static void do_ST_Z2(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1047,7 +1047,7 @@ void do_ST_Z2(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Z3(u16 instr)
+static void do_ST_Z3(u16 instr)
 {
     trace(__FUNCTION__);
     // -------rrrrr----
@@ -1056,7 +1056,7 @@ void do_ST_Z3(u16 instr)
     Cycle += 2;
 }
 
-void do_ST_Z4(u16 instr)
+static void do_ST_Z4(u16 instr)
 {
     trace(__FUNCTION__);
     // --q-qq-rrrrr-qqq
@@ -1066,7 +1066,7 @@ void do_ST_Z4(u16 instr)
     Cycle += 2;
 }
 
-void do_STS(u16 instr)
+static void do_STS(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -1075,7 +1075,7 @@ void do_STS(u16 instr)
     Cycle += 2;
 }
 
-void do_SUB(u16 instr)
+static void do_SUB(u16 instr)
 {
     trace(__FUNCTION__);
     // ------rdddddrrrr
@@ -1092,7 +1092,7 @@ void do_SUB(u16 instr)
     Cycle++;
 }
 
-void do_SUBI(u16 instr)
+static void do_SUBI(u16 instr)
 {
     trace(__FUNCTION__);
     // ----KKKKddddKKKK
@@ -1109,7 +1109,7 @@ void do_SUBI(u16 instr)
     Cycle++;
 }
 
-void do_SWAP(u16 instr)
+static void do_SWAP(u16 instr)
 {
     trace(__FUNCTION__);
     // -------ddddd----
@@ -1118,7 +1118,7 @@ void do_SWAP(u16 instr)
     Cycle++;
 }
 
-void do_WDR(u16 instr)
+static void do_WDR(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
@@ -1127,7 +1127,7 @@ void do_WDR(u16 instr)
 
 #include "avr.inc"
 
-void irq(int n)
+static void irq(int n)
 {
     write(Data.SP--, PC >> 8);
     write(Data.SP--, PC & 0xff);
@@ -1135,7 +1135,7 @@ void irq(int n)
     Data.SREG.I = 0;
 }
 
-u8 ioread(u16 addr)
+static u8 ioread(u16 addr)
 {
     //fprintf(stderr, "ioread %04x\n", addr);
     switch (addr) {
@@ -1145,7 +1145,7 @@ u8 ioread(u16 addr)
     return Data._Bytes[addr];
 }
 
-void iowrite(u16 addr, u8 value)
+static void iowrite(u16 addr, u8 value)
 {
     if (addr != 0x5f) {
         //fprintf(stderr, "iowrite %04x %02x\n", addr, value);

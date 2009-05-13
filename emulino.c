@@ -10,6 +10,7 @@ typedef signed char s8;
 typedef unsigned char u8;
 typedef signed short s16;
 typedef unsigned short u16;
+typedef unsigned long u32;
 
 typedef void (*Handler)(u16 instr);
 
@@ -63,6 +64,7 @@ void iowrite(u16 addr, u8 value);
 u16 Program[PROGRAM_SIZE_WORDS];
 TData Data;
 u16 PC;
+u32 Cycle;
 
 u8 read(u16 addr)
 {
@@ -117,6 +119,7 @@ void do_ADC(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & ~x) | (~x & Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_ADD(u16 instr)
@@ -133,6 +136,7 @@ void do_ADD(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & ~x) | (~x & Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_ADIW(u16 instr)
@@ -148,6 +152,7 @@ void do_ADIW(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = ((~x & Data.RegW[d]) & 0x8000) != 0;
     Data.RegW[d] = x;
+    Cycle += 2;
 }
 
 void do_AND(u16 instr)
@@ -161,6 +166,7 @@ void do_AND(u16 instr)
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_ANDI(u16 instr)
@@ -174,6 +180,7 @@ void do_ANDI(u16 instr)
     Data.SREG.V = 0;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
+    Cycle++;
 }
 
 void do_ASR(u16 instr)
@@ -187,6 +194,7 @@ void do_ASR(u16 instr)
     Data.SREG.V = Data.SREG.N ^ Data.SREG.C;
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_BCLR(u16 instr)
@@ -195,6 +203,7 @@ void do_BCLR(u16 instr)
     // ---------sss----
     u16 s = ((instr >> 4) & 0x7);
     Data.SREG.bits &= ~(1 << s);
+    Cycle++;
 }
 
 void do_BLD(u16 instr)
@@ -204,6 +213,7 @@ void do_BLD(u16 instr)
     u16 d = ((instr >> 4) & 0x1f);
     u16 b = (instr & 0x7);
     Data.Reg[d] = (Data.Reg[d] & ~(1 << b)) | ((Data.SREG.T ? 1 : 0) << b);
+    Cycle++;
 }
 
 void do_BRBC(u16 instr)
@@ -214,7 +224,9 @@ void do_BRBC(u16 instr)
     u16 s = (instr & 0x7);
     if ((Data.SREG.bits & (1 << s)) == 0) {
         PC += (s8)(k << 1) >> 1;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_BRBS(u16 instr)
@@ -225,13 +237,16 @@ void do_BRBS(u16 instr)
     u16 s = (instr & 0x7);
     if (Data.SREG.bits & (1 << s)) {
         PC += (s8)(k << 1) >> 1;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_BREAK(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
+    Cycle++;
 }
 
 void do_BSET(u16 instr)
@@ -240,6 +255,7 @@ void do_BSET(u16 instr)
     // ---------sss----
     u16 s = ((instr >> 4) & 0x7);
     Data.SREG.bits |= 1 << s;
+    Cycle++;
 }
 
 void do_BST(u16 instr)
@@ -249,6 +265,7 @@ void do_BST(u16 instr)
     u16 d = ((instr >> 4) & 0x1f);
     u16 b = (instr & 0x7);
     Data.SREG.T = ((Data.Reg[d] & (1 << b)) != 0);
+    Cycle++;
 }
 
 void do_CALL(u16 instr)
@@ -260,6 +277,7 @@ void do_CALL(u16 instr)
     write(Data.SP--, PC >> 8);
     write(Data.SP--, PC & 0xff);
     PC = k;
+    Cycle += 4;
 }
 
 void do_CBI(u16 instr)
@@ -269,6 +287,7 @@ void do_CBI(u16 instr)
     u16 A = ((instr >> 3) & 0x1f);
     u16 b = (instr & 0x7);
     write(0x20+A, read(0x20+A) & ~(1 << b));
+    Cycle += 2;
 }
 
 void do_COM(u16 instr)
@@ -282,6 +301,7 @@ void do_COM(u16 instr)
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
     Data.SREG.C = 1;
+    Cycle++;
 }
 
 void do_CP(u16 instr)
@@ -297,6 +317,7 @@ void do_CP(u16 instr)
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((~Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
+    Cycle++;
 }
 
 void do_CPC(u16 instr)
@@ -312,6 +333,7 @@ void do_CPC(u16 instr)
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z &= x == 0;
     Data.SREG.C = (((~Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
+    Cycle++;
 }
 
 void do_CPI(u16 instr)
@@ -327,6 +349,7 @@ void do_CPI(u16 instr)
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((~Data.Reg[d] & K) | (K & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
+    Cycle++;
 }
 
 void do_CPSE(u16 instr)
@@ -338,9 +361,12 @@ void do_CPSE(u16 instr)
     if (Data.Reg[d] == Data.Reg[r]) {
         if (doubleWordInstruction(Program[PC])) {
             PC++;
+            Cycle++;
         }
         PC++;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_DEC(u16 instr)
@@ -353,6 +379,7 @@ void do_DEC(u16 instr)
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_DES(u16 instr)
@@ -377,6 +404,7 @@ void do_ELPM_1(u16 instr)
 {
     trace(__FUNCTION__);
     Data.Reg[0] = ((u8 *)Program)[Data.Z];
+    Cycle += 3;
 }
 
 void do_ELPM_2(u16 instr)
@@ -402,6 +430,7 @@ void do_EOR(u16 instr)
     Data.SREG.V = 0;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
+    Cycle++;
 }
 
 void do_FMUL(u16 instr)
@@ -428,12 +457,14 @@ void do_ICALL(u16 instr)
     write(Data.SP--, PC >> 8);
     write(Data.SP--, PC & 0xff);
     PC = Data.Z;
+    Cycle += 3;
 }
 
 void do_IJMP(u16 instr)
 {
     trace(__FUNCTION__);
     PC = Data.Z;
+    Cycle += 2;
 }
 
 void do_IN(u16 instr)
@@ -443,6 +474,7 @@ void do_IN(u16 instr)
     u16 A = (instr & 0xf) | ((instr >> 5) & 0x30);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(0x20 + A);
+    Cycle++;
 }
 
 void do_INC(u16 instr)
@@ -455,6 +487,7 @@ void do_INC(u16 instr)
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_JMP(u16 instr)
@@ -464,6 +497,7 @@ void do_JMP(u16 instr)
     u16 k = (instr & 0x1) | ((instr >> 3) & 0x3e);
     k = k << 16 | Program[PC++];
     PC = k;
+    Cycle += 3;
 }
 
 void do_LD_X1(u16 instr)
@@ -472,6 +506,7 @@ void do_LD_X1(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.X);
+    Cycle += 2;
 }
 
 void do_LD_X2(u16 instr)
@@ -480,6 +515,7 @@ void do_LD_X2(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.X++);
+    Cycle += 2;
 }
 
 void do_LD_X3(u16 instr)
@@ -488,6 +524,7 @@ void do_LD_X3(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(--Data.X);
+    Cycle += 2;
 }
 
 void do_LD_Y2(u16 instr)
@@ -496,6 +533,7 @@ void do_LD_Y2(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.Y++);
+    Cycle += 2;
 }
 
 void do_LD_Y3(u16 instr)
@@ -504,6 +542,7 @@ void do_LD_Y3(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(--Data.Y);
+    Cycle += 2;
 }
 
 void do_LD_Y4(u16 instr)
@@ -513,6 +552,7 @@ void do_LD_Y4(u16 instr)
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.Y+q);
+    Cycle += 2;
 }
 
 void do_LD_Z2(u16 instr)
@@ -521,6 +561,7 @@ void do_LD_Z2(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.Z++);
+    Cycle += 2;
 }
 
 void do_LD_Z3(u16 instr)
@@ -529,6 +570,7 @@ void do_LD_Z3(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(--Data.Z);
+    Cycle += 2;
 }
 
 void do_LD_Z4(u16 instr)
@@ -538,6 +580,7 @@ void do_LD_Z4(u16 instr)
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Data.Z+q);
+    Cycle += 2;
 }
 
 void do_LDI(u16 instr)
@@ -547,6 +590,7 @@ void do_LDI(u16 instr)
     u16 K = (instr & 0xf) | ((instr >> 4) & 0xf0);
     u16 d = 16 + ((instr >> 4) & 0xf);
     Data.Reg[d] = K;
+    Cycle++;
 }
 
 void do_LDS(u16 instr)
@@ -555,12 +599,14 @@ void do_LDS(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(Program[PC++]);
+    Cycle += 2;
 }
 
 void do_LPM_1(u16 instr)
 {
     trace(__FUNCTION__);
     Data.Reg[0] = ((u8 *)Program)[Data.Z];
+    Cycle += 3;
 }
 
 void do_LPM_2(u16 instr)
@@ -569,6 +615,7 @@ void do_LPM_2(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = ((u8 *)Program)[Data.Z];
+    Cycle += 3;
 }
 
 void do_LPM_3(u16 instr)
@@ -577,6 +624,7 @@ void do_LPM_3(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = ((u8 *)Program)[Data.Z++];
+    Cycle += 3;
 }
 
 void do_LSR(u16 instr)
@@ -590,6 +638,7 @@ void do_LSR(u16 instr)
     Data.SREG.V = Data.SREG.N ^ Data.SREG.C;
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_MOV(u16 instr)
@@ -599,6 +648,7 @@ void do_MOV(u16 instr)
     u16 r = (instr & 0xf) | ((instr >> 5) & 0x10);
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = Data.Reg[r];
+    Cycle++;
 }
 
 void do_MOVW(u16 instr)
@@ -609,6 +659,7 @@ void do_MOVW(u16 instr)
     u16 r = (instr & 0xf);
     Data.Reg[d*2] = Data.Reg[r*2];
     Data.Reg[d*2+1] = Data.Reg[r*2+1];
+    Cycle++;
 }
 
 void do_MUL(u16 instr)
@@ -622,6 +673,7 @@ void do_MUL(u16 instr)
     Data.Reg[0] = x & 0xff;
     Data.SREG.C = (x & 0x8000) != 0;
     Data.SREG.Z = x == 0;
+    Cycle += 2;
 }
 
 void do_MULS(u16 instr)
@@ -635,6 +687,7 @@ void do_MULS(u16 instr)
     Data.Reg[0] = x & 0xff;
     Data.SREG.C = (x & 0x8000) != 0;
     Data.SREG.Z = x == 0;
+    Cycle += 2;
 }
 
 void do_MULSU(u16 instr)
@@ -648,6 +701,7 @@ void do_MULSU(u16 instr)
     Data.Reg[0] = x & 0xff;
     Data.SREG.C = (x & 0x8000) != 0;
     Data.SREG.Z = x == 0;
+    Cycle += 2;
 }
 
 void do_NEG(u16 instr)
@@ -663,11 +717,13 @@ void do_NEG(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = x != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_NOP(u16 instr)
 {
     trace(__FUNCTION__);
+    Cycle++;
 }
 
 void do_OR(u16 instr)
@@ -681,6 +737,7 @@ void do_OR(u16 instr)
     Data.SREG.N = (Data.Reg[d] & 0x80) != 0;
     Data.SREG.S = Data.SREG.N;
     Data.SREG.Z = Data.Reg[d] == 0;
+    Cycle++;
 }
 
 void do_ORI(u16 instr)
@@ -694,6 +751,7 @@ void do_ORI(u16 instr)
     Data.SREG.V = 0;
     Data.SREG.N = (x & 0x80) != 0;
     Data.SREG.Z = x == 0;
+    Cycle++;
 }
 
 void do_OUT(u16 instr)
@@ -703,6 +761,7 @@ void do_OUT(u16 instr)
     u16 A = (instr & 0xf) | ((instr >> 5) & 0x30);
     u16 r = ((instr >> 4) & 0x1f);
     write(0x20 + A, Data.Reg[r]);
+    Cycle++;
 }
 
 void do_POP(u16 instr)
@@ -711,6 +770,7 @@ void do_POP(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = read(++Data.SP);
+    Cycle += 2;
 }
 
 void do_PUSH(u16 instr)
@@ -719,6 +779,7 @@ void do_PUSH(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.SP--, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_RCALL(u16 instr)
@@ -729,6 +790,7 @@ void do_RCALL(u16 instr)
     write(Data.SP--, PC >> 8);
     write(Data.SP--, PC & 0xff);
     PC += (s16)(k << 4) >> 4;
+    Cycle += 3;
 }
 
 void do_RET(u16 instr)
@@ -736,6 +798,7 @@ void do_RET(u16 instr)
     trace(__FUNCTION__);
     PC = read(Data.SP+1) | (read(Data.SP+2) << 8);
     Data.SP += 2;
+    Cycle += 4;
 }
 
 void do_RETI(u16 instr)
@@ -744,6 +807,7 @@ void do_RETI(u16 instr)
     PC = read(Data.SP+1) | (read(Data.SP+2) << 8);
     Data.SP += 2;
     Data.SREG.I = 1;
+    Cycle += 4;
 }
 
 void do_RJMP(u16 instr)
@@ -752,6 +816,7 @@ void do_RJMP(u16 instr)
     // ----kkkkkkkkkkkk
     u16 k = (instr & 0xfff);
     PC += (s16)(k << 4) >> 4;
+    Cycle += 2;
 }
 
 void do_ROR(u16 instr)
@@ -766,6 +831,7 @@ void do_ROR(u16 instr)
     Data.SREG.S = Data.SREG.N ^ Data.SREG.V;
     Data.SREG.Z = Data.Reg[d] == 0;
     Data.SREG.C = c;
+    Cycle++;
 }
 
 void do_SBC(u16 instr)
@@ -782,6 +848,7 @@ void do_SBC(u16 instr)
     Data.SREG.Z &= x == 0;
     Data.SREG.C = (((~Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_SBCI(u16 instr)
@@ -798,6 +865,7 @@ void do_SBCI(u16 instr)
     Data.SREG.Z &= x == 0;
     Data.SREG.C = (((~Data.Reg[d] & K) | (K & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_SBI(u16 instr)
@@ -807,6 +875,7 @@ void do_SBI(u16 instr)
     u16 A = ((instr >> 3) & 0x1f);
     u16 b = (instr & 0x7);
     write(0x20+A, read(0x20+A) | (1 << b));
+    Cycle += 2;
 }
 
 void do_SBIC(u16 instr)
@@ -818,9 +887,12 @@ void do_SBIC(u16 instr)
     if ((read(0x20+A) & (1 << b)) == 0) {
         if (doubleWordInstruction(Program[PC])) {
             PC++;
+            Cycle++;
         }
         PC++;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_SBIS(u16 instr)
@@ -832,9 +904,12 @@ void do_SBIS(u16 instr)
     if ((read(0x20+A) & (1 << b)) != 0) {
         if (doubleWordInstruction(Program[PC])) {
             PC++;
+            Cycle++;
         }
         PC++;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_SBIW(u16 instr)
@@ -850,6 +925,7 @@ void do_SBIW(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = ((x & ~Data.RegW[d]) & 0x8000) != 0;
     Data.RegW[d] = x;
+    Cycle += 2;
 }
 
 void do_SBRC(u16 instr)
@@ -861,9 +937,12 @@ void do_SBRC(u16 instr)
     if ((Data.Reg[r] & (1 << b)) == 0) {
         if (doubleWordInstruction(Program[PC])) {
             PC++;
+            Cycle++;
         }
         PC++;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_SBRS(u16 instr)
@@ -875,27 +954,33 @@ void do_SBRS(u16 instr)
     if (Data.Reg[r] & (1 << b)) {
         if (doubleWordInstruction(Program[PC])) {
             PC++;
+            Cycle++;
         }
         PC++;
+        Cycle++;
     }
+    Cycle++;
 }
 
 void do_SLEEP(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
+    Cycle++;
 }
 
 void do_SPM2_1(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
+    // unknown cycles
 }
 
 void do_SPM2_2(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
+    // unknown cycles
 }
 
 void do_ST_X1(u16 instr)
@@ -904,6 +989,7 @@ void do_ST_X1(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.X, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_X2(u16 instr)
@@ -912,6 +998,7 @@ void do_ST_X2(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.X++, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_X3(u16 instr)
@@ -920,6 +1007,7 @@ void do_ST_X3(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(--Data.X, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Y2(u16 instr)
@@ -928,6 +1016,7 @@ void do_ST_Y2(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.Y++, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Y3(u16 instr)
@@ -936,6 +1025,7 @@ void do_ST_Y3(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(--Data.Y, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Y4(u16 instr)
@@ -945,6 +1035,7 @@ void do_ST_Y4(u16 instr)
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.Y+q, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Z2(u16 instr)
@@ -953,6 +1044,7 @@ void do_ST_Z2(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.Z++, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Z3(u16 instr)
@@ -961,6 +1053,7 @@ void do_ST_Z3(u16 instr)
     // -------rrrrr----
     u16 r = ((instr >> 4) & 0x1f);
     write(--Data.Z, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_ST_Z4(u16 instr)
@@ -970,6 +1063,7 @@ void do_ST_Z4(u16 instr)
     u16 q = (instr & 0x7) | ((instr >> 7) & 0x18) | ((instr >> 8) & 0x20);
     u16 r = ((instr >> 4) & 0x1f);
     write(Data.Z+q, Data.Reg[r]);
+    Cycle += 2;
 }
 
 void do_STS(u16 instr)
@@ -978,6 +1072,7 @@ void do_STS(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     write(Program[PC++], Data.Reg[d]);
+    Cycle += 2;
 }
 
 void do_SUB(u16 instr)
@@ -994,6 +1089,7 @@ void do_SUB(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((~Data.Reg[d] & Data.Reg[r]) | (Data.Reg[r] & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_SUBI(u16 instr)
@@ -1010,6 +1106,7 @@ void do_SUBI(u16 instr)
     Data.SREG.Z = x == 0;
     Data.SREG.C = (((~Data.Reg[d] & K) | (K & x) | (x & ~Data.Reg[d])) & 0x80) != 0;
     Data.Reg[d] = x;
+    Cycle++;
 }
 
 void do_SWAP(u16 instr)
@@ -1018,12 +1115,14 @@ void do_SWAP(u16 instr)
     // -------ddddd----
     u16 d = ((instr >> 4) & 0x1f);
     Data.Reg[d] = (Data.Reg[d] << 4) | (Data.Reg[d] >> 4);
+    Cycle++;
 }
 
 void do_WDR(u16 instr)
 {
     trace(__FUNCTION__);
     unimplemented(__FUNCTION__);
+    Cycle++;
 }
 
 #include "avr.inc"
@@ -1063,21 +1162,6 @@ void iowrite(u16 addr, u8 value)
         break;
     }
     Data._Bytes[addr] = value;
-}
-
-uint64_t rdtsc()
-{
-    uint32_t lo, hi;
-    __asm__ __volatile__ (
-        "pushl %%ebx\n"
-        "xorl %%eax, %%eax\n"
-        "cpuid\n"
-        "rdtsc\n"
-        "popl %%ebx\n"
-        : "=a" (lo), "=d" (hi)
-        :
-        : "%ecx");
-    return ((uint64_t)hi << 32) | lo;
 }
 
 void LoadBinary(const char *fn)
@@ -1162,8 +1246,9 @@ int main(int argc, char *argv[])
     Load(argv[1]);
 
     PC = 0;
+    Cycle = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
-    uint64_t lasttick = 0;
+    u32 lasttick = 0;
     for (;;) {
         #ifdef TRACE
             int i;
@@ -1186,9 +1271,8 @@ int main(int argc, char *argv[])
         #endif
         u16 instr = Program[PC++];
         Instr[instr](instr);
-        uint64_t t = rdtsc();
-        if (Data.SREG.I && t - lasttick > 1000000) {
-            lasttick = t;
+        if (Data.SREG.I && Cycle - lasttick > 20000) {
+            lasttick = Cycle;
             //fprintf(stderr, "tick\n");
             irq(16);
         }

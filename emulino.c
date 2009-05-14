@@ -4,13 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#define TRACE
+#include "cpu.h"
 
-typedef signed char s8;
-typedef unsigned char u8;
-typedef signed short s16;
-typedef unsigned short u16;
-typedef unsigned long u32;
+#include "usart.h"
+
+//#define TRACE
 
 typedef void (*Handler)(u16 instr);
 
@@ -63,6 +61,8 @@ static void iowrite(u16 addr, u8 value);
 
 u16 Program[PROGRAM_SIZE_WORDS];
 TData Data;
+ReadFunction IORead[0x100];
+WriteFunction IOWrite[0x100];
 u16 PC;
 u32 Cycle;
 
@@ -1138,9 +1138,9 @@ static void irq(int n)
 static u8 ioread(u16 addr)
 {
     //fprintf(stderr, "ioread %04x\n", addr);
-    switch (addr) {
-    case 0xc0:
-        return (1 << 5);
+    ReadFunction f = IORead[addr];
+    if (f != NULL) {
+        return f(addr);
     }
     return Data._Bytes[addr];
 }
@@ -1150,6 +1150,10 @@ static void iowrite(u16 addr, u8 value)
     if (addr != 0x5f) {
         //fprintf(stderr, "iowrite %04x %02x\n", addr, value);
     }
+    WriteFunction f = IOWrite[addr];
+    if (f != NULL) {
+        f(addr, value);
+    }
     switch (addr) {
     case 0x25:
         fprintf(stderr, "PORTB: %02x\n", value);
@@ -1157,11 +1161,20 @@ static void iowrite(u16 addr, u8 value)
     case 0x2b:
         fprintf(stderr, "PORTD: %02x\n", value);
         break;
-    case 0xc6:
-        putchar(value);
-        break;
     }
     Data._Bytes[addr] = value;
+}
+
+void register_read(u16 addr, ReadFunction f)
+{
+    assert(IORead[addr] == NULL);
+    IORead[addr] = f;
+}
+
+void register_write(u16 addr, WriteFunction f)
+{
+    assert(IOWrite[addr] == NULL);
+    IOWrite[addr] = f;
 }
 
 void LoadBinary(const char *fn)
@@ -1242,6 +1255,8 @@ int main(int argc, char *argv[])
                         "       image is a raw binary or hex image file\n", argv[0]);
         exit(1);
     }
+
+    usart_init();
 
     Load(argv[1]);
 

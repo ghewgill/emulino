@@ -1,0 +1,6 @@
+.sconsign*
+.*.swp
+*.o
+avr.inc
+emulino
+emulino.eeprom

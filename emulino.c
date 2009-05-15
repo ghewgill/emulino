@@ -1205,13 +1205,12 @@ void LoadBinary(const char *fn)
     fclose(f);
 }
 
-void LoadHex(const char *fn, u8 *data, unsigned int size)
+bool LoadHex(const char *fn, u8 *data, unsigned int size)
 {
     fprintf(stderr, "emulino: Loading hex image: %s\n", fn);
     FILE *f = fopen(fn, "r");
     if (f == NULL) {
-        perror(fn);
-        exit(1);
+        return false;
     }
     char buf[100];
     int eof = 0;
@@ -1244,17 +1243,25 @@ void LoadHex(const char *fn, u8 *data, unsigned int size)
         }
     }
     fclose(f);
+    return true;
 }
 
 void Load(const char *fn)
 {
     FILE *f = fopen(fn, "r");
+    if (f == 0) {
+        perror(fn);
+        exit(1);
+    }
     char buf[100];
     fgets(buf, sizeof(buf), f);
     fclose(f);
     int n;
     if (sscanf(buf, ":%02x", &n) == 1 && strcspn(buf, "\r\n") == 11+2*n) {
-        LoadHex(fn, (u8 *)Program, 2*PROGRAM_SIZE_WORDS);
+        if (!LoadHex(fn, (u8 *)Program, 2*PROGRAM_SIZE_WORDS)) {
+            perror(fn);
+            exit(1);
+        }
     } else {
         LoadBinary(fn);
     }

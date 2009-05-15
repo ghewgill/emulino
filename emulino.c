@@ -1165,16 +1165,13 @@ static void iowrite(u16 addr, u8 value)
     Data._Bytes[addr] = value;
 }
 
-void register_read(u16 addr, ReadFunction f)
+void register_io(u16 addr, ReadFunction rf, WriteFunction wf)
 {
     assert(IORead[addr] == NULL);
-    IORead[addr] = f;
-}
+    IORead[addr] = rf;
 
-void register_write(u16 addr, WriteFunction f)
-{
     assert(IOWrite[addr] == NULL);
-    IOWrite[addr] = f;
+    IOWrite[addr] = wf;
 }
 
 void LoadBinary(const char *fn)

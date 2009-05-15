@@ -1,3 +1,5 @@
+#include "usart.h"
+
 #include <stdio.h>
 
 #include "cpu.h"
@@ -14,6 +16,6 @@ void usart_write(u16 addr, u8 value)
 
 void usart_init()
 {
-    register_read(0xc0, usart_read);
-    register_write(0xc6, usart_write);
+    register_io(0xc0, usart_read, NULL);
+    register_io(0xc6, NULL, usart_write);
 }

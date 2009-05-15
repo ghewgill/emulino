@@ -7,5 +7,4 @@ typedef unsigned long u32;
 typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);
 
-void register_read(u16 addr, ReadFunction f);
-void register_write(u16 addr, WriteFunction f);
+void register_io(u16 addr, ReadFunction rf, WriteFunction wf);

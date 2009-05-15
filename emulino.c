@@ -7,6 +7,7 @@
 #include "cpu.h"
 
 #include "eeprom.h"
+#include "timer.h"
 #include "usart.h"
 
 //#define TRACE
@@ -1272,6 +1273,7 @@ int main(int argc, char *argv[])
     }
 
     eeprom_init();
+    timer_init();
     usart_init();
 
     Load(argv[1]);
@@ -1280,7 +1282,6 @@ int main(int argc, char *argv[])
     Cycle = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
     u32 lastpoll = 0;
-    u32 lasttick = 0;
     for (;;) {
         #ifdef TRACE
             int i;
@@ -1309,11 +1310,6 @@ int main(int argc, char *argv[])
             for (i = 0; i < PollFunctionCount; i++) {
                 PollFunctions[i]();
             }
-        }
-        if (Data.SREG.I && Cycle - lasttick > 20000) {
-            lasttick = Cycle;
-            //fprintf(stderr, "tick\n");
-            irq(17);
         }
     }
     return 0;

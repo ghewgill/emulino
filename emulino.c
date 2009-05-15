@@ -16,6 +16,9 @@ typedef void (*Handler)(u16 instr);
 #define PROGRAM_SIZE_WORDS  0x10000
 #define DATA_SIZE_BYTES     0x900
 
+#define MAX_POLL_FUNCTIONS  16
+#define MAX_IRQ             27
+
 typedef struct {
     union {
         struct {
@@ -64,6 +67,9 @@ u16 Program[PROGRAM_SIZE_WORDS];
 TData Data;
 ReadFunction IORead[0x100];
 WriteFunction IOWrite[0x100];
+PollFunction PollFunctions[MAX_POLL_FUNCTIONS];
+int PollFunctionCount;
+int PendingIRQ[MAX_IRQ];
 u16 PC;
 u32 Cycle;
 
@@ -1128,12 +1134,16 @@ static void do_WDR(u16 instr)
 
 #include "avr.inc"
 
-static void irq(int n)
+void irq(int n)
 {
-    write(Data.SP--, PC >> 8);
-    write(Data.SP--, PC & 0xff);
-    PC = n << 1;
-    Data.SREG.I = 0;
+    if (Data.SREG.I) {
+        write(Data.SP--, PC >> 8);
+        write(Data.SP--, PC & 0xff);
+        PC = (n - 1) << 1;
+        Data.SREG.I = 0;
+    } else {
+        PendingIRQ[n] = 1;
+    }
 }
 
 static u8 ioread(u16 addr)
@@ -1149,7 +1159,9 @@ static u8 ioread(u16 addr)
 static void iowrite(u16 addr, u8 value)
 {
     if (addr != 0x5f) {
-        //fprintf(stderr, "iowrite %04x %02x\n", addr, value);
+        #ifdef TRACE
+            fprintf(stderr, "iowrite %04x %02x\n", addr, value);
+        #endif
     }
     WriteFunction f = IOWrite[addr];
     if (f != NULL) {
@@ -1173,6 +1185,11 @@ void register_io(u16 addr, ReadFunction rf, WriteFunction wf)
 
     assert(IOWrite[addr] == NULL);
     IOWrite[addr] = wf;
+}
+
+void register_poll(PollFunction pf)
+{
+    PollFunctions[PollFunctionCount++] = pf;
 }
 
 void LoadBinary(const char *fn)
@@ -1262,6 +1279,7 @@ int main(int argc, char *argv[])
     PC = 0;
     Cycle = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
+    u32 lastpoll = 0;
     u32 lasttick = 0;
     for (;;) {
         #ifdef TRACE
@@ -1285,10 +1303,17 @@ int main(int argc, char *argv[])
         #endif
         u16 instr = Program[PC++];
         Instr[instr](instr);
+        if (Cycle - lastpoll > 10000) {
+            lastpoll = Cycle;
+            int i;
+            for (i = 0; i < PollFunctionCount; i++) {
+                PollFunctions[i]();
+            }
+        }
         if (Data.SREG.I && Cycle - lasttick > 20000) {
             lasttick = Cycle;
             //fprintf(stderr, "tick\n");
-            irq(16);
+            irq(17);
         }
     }
     return 0;

@@ -6,8 +6,12 @@ typedef unsigned long u32;
 
 typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);
+typedef void (*PollFunction)();
+
+void irq(int n);
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf);
+void register_poll(PollFunction pf);
 void LoadHex(const char *fn, u8 *data, unsigned int size);
 
 #define BIT(b) (1 << (b))

@@ -8,3 +8,6 @@ typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf);
+void LoadHex(const char *fn, u8 *data, unsigned int size);
+
+#define BIT(b) (1 << (b))

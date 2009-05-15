@@ -6,6 +6,7 @@
 
 #include "cpu.h"
 
+#include "eeprom.h"
 #include "usart.h"
 
 //#define TRACE
@@ -1186,7 +1187,7 @@ void LoadBinary(const char *fn)
     fclose(f);
 }
 
-void LoadHex(const char *fn)
+void LoadHex(const char *fn, u8 *data, unsigned int size)
 {
     fprintf(stderr, "emulino: Loading hex image: %s\n", fn);
     FILE *f = fopen(fn, "r");
@@ -1213,7 +1214,7 @@ void LoadHex(const char *fn)
             for (i = 0; i < n; i++) {
                 int x;
                 sscanf(buf+9+i*2, "%02x", &x);
-                ((u8 *)Program)[a+i] = x;
+                data[a+i] = x;
             }
             break;
         case 0x01:
@@ -1235,7 +1236,7 @@ void Load(const char *fn)
     fclose(f);
     int n;
     if (sscanf(buf, ":%02x", &n) == 1 && strcspn(buf, "\r\n") == 11+2*n) {
-        LoadHex(fn);
+        LoadHex(fn, (u8 *)Program, 2*PROGRAM_SIZE_WORDS);
     } else {
         LoadBinary(fn);
     }
@@ -1253,6 +1254,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    eeprom_init();
     usart_init();
 
     Load(argv[1]);

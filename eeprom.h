@@ -1,0 +1,1 @@
+void eeprom_init();

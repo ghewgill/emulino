@@ -1133,6 +1133,11 @@ static void do_WDR(u16 instr)
     Cycle++;
 }
 
+static void do_exit(u16 instr)
+{
+    exit(0);
+}
+
 #include "avr.inc"
 
 void irq(int n)
@@ -1284,6 +1289,11 @@ int main(int argc, char *argv[])
     usart_init();
 
     Load(argv[1]);
+
+    // AVR programs often end with a jump-to-self after calling main()
+    // so we make that particular opcode do an exit() instead of
+    // looping forever
+    Instr[0xcfff] = do_exit;
 
     PC = 0;
     Cycle = 0;

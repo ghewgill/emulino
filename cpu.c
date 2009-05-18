@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "util.h"
+
 #include "eeprom.h"
 #include "timer.h"
 #include "usart.h"
@@ -88,6 +90,10 @@ int PollFunctionCount;
 int PendingIRQ[MAX_IRQ];
 u16 PC;
 u32 Cycle;
+
+COMPILE_ASSERT(sizeof(Data.SREG) == 1);
+COMPILE_ASSERT(((u8 *)&Data.SP) - Data._Bytes == 0x5d);
+COMPILE_ASSERT(((u8 *)&Data.SREG) - Data._Bytes == 0x5f);
 
 static u8 read(u16 addr)
 {
@@ -1215,10 +1221,6 @@ void register_poll(PollFunction pf)
 
 void cpu_init()
 {
-    assert(sizeof(Data.SREG) == 1);
-    assert(((u8 *)&Data.SP) - Data._Bytes == 0x5d);
-    assert(((u8 *)&Data.SREG) - Data._Bytes == 0x5f);
-
     eeprom_init();
     timer_init();
     usart_init();

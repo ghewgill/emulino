@@ -39,3 +39,10 @@ void register_poll(PollFunction pf);
 bool LoadHex(const char *fn, u8 *data, unsigned int size);
 
 #define BIT(b) (1 << (b))
+
+#define PROGRAM_SIZE_WORDS  0x10000
+#define DATA_SIZE_BYTES     0x900
+
+void cpu_init();
+void cpu_reset();
+void cpu_run();

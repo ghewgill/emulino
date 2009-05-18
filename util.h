@@ -18,4 +18,23 @@
  * along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __UTIL_H
+#define __UTIL_H
+
+typedef signed char s8;
+typedef unsigned char u8;
+typedef signed short s16;
+typedef unsigned short u16;
+typedef unsigned long u32;
+
+#ifndef __cplusplus
+typedef int bool;
+#define false   0
+#define true    (!false)
+#endif
+
+#define BIT(b) (1 << (b))
+
 #define COMPILE_ASSERT(x) extern int __assertion[(x) ? 1 : -1]
+
+#endif // __UTIL_H

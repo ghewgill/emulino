@@ -34,5 +34,6 @@ void register_poll(PollFunction pf);
 bool LoadHex(const char *fn, u8 *data, unsigned int size);
 
 void cpu_init();
+void cpu_load_flash(u8 *buf, u32 bufsize);
 void cpu_reset();
 void cpu_run();

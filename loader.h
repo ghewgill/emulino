@@ -1,5 +1,5 @@
 /*
- * emulino - arduino emulator
+ * binary file loading utilities
  * Copyright 2009 Greg Hewgill
  *
  * This file is part of Emulino.
@@ -18,27 +18,6 @@
  * along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "util.h"
 
-#include "cpu.h"
-#include "loader.h"
-
-int main(int argc, char *argv[])
-{
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s image\n"
-                        "       image is a raw binary or hex image file\n", argv[0]);
-        exit(1);
-    }
-
-    u8 prog[PROGRAM_SIZE_WORDS*2];
-    u32 progsize = Load(argv[1], prog, sizeof(prog));
-
-    cpu_init();
-    cpu_load_flash(prog, progsize);
-    for (;;) {
-        cpu_run();
-    }
-    return 0;
-}
+u32 Load(const char *fn, u8 *buf, u32 bufsize);

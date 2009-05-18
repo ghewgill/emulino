@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "util.h"
 
@@ -1232,6 +1233,11 @@ void cpu_init()
     Instr[0xcfff] = do_exit;
 
     cpu_reset();
+}
+
+void cpu_load_flash(u8 *buf, u32 bufsize)
+{
+    memcpy(Program, buf, bufsize);
 }
 
 void cpu_reset()

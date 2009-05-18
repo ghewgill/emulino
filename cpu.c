@@ -90,6 +90,7 @@ int PollFunctionCount;
 int PendingIRQ[MAX_IRQ];
 u16 PC;
 u32 Cycle;
+u32 LastPoll;
 
 COMPILE_ASSERT(sizeof(Data.SREG) == 1);
 COMPILE_ASSERT(((u8 *)&Data.SP) - Data._Bytes == 0x5d);
@@ -1238,11 +1239,11 @@ void cpu_reset()
     PC = 0;
     Cycle = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
+    LastPoll = 0;
 }
 
 void cpu_run()
 {
-    u32 lastpoll = Cycle;
     for (;;) {
         #ifdef TRACE
             int i;
@@ -1265,8 +1266,8 @@ void cpu_run()
         #endif
         u16 instr = Program[PC++];
         Instr[instr](instr);
-        if (Cycle - lastpoll > 10000) {
-            lastpoll = Cycle;
+        if (Cycle - LastPoll > 10000) {
+            LastPoll = Cycle;
             int i;
             for (i = 0; i < PollFunctionCount; i++) {
                 PollFunctions[i]();

@@ -33,10 +33,18 @@ int main(int argc, char *argv[])
     }
 
     u8 prog[PROGRAM_SIZE_WORDS*2];
-    u32 progsize = Load(argv[1], prog, sizeof(prog));
+    u32 progsize = load_file(argv[1], prog, sizeof(prog));
+    if (progsize == 0) {
+        perror(argv[1]);
+        exit(1);
+    }
+
+    u8 eeprom[512];
+    u32 eepromsize = load_file("emulino.eeprom", eeprom, sizeof(eeprom));
 
     cpu_init();
     cpu_load_flash(prog, progsize);
+    cpu_load_eeprom(eeprom, eepromsize);
     for (;;) {
         cpu_run();
     }

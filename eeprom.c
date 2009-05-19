@@ -20,6 +20,8 @@
 
 #include "eeprom.h"
 
+#include <string.h>
+
 #include "cpu.h"
 
 #define EEPROM_SIZE 1024
@@ -81,12 +83,15 @@ void eeprom_write_eearh(u16 addr, u8 value)
     EEAR = (EEAR & ~0xff00) | ((value << 8) & (EEPROM_SIZE-1));
 }
 
+void eeprom_load(u8 *buf, u32 bufsize)
+{
+    memcpy(EEPROM, buf, bufsize);
+}
+
 void eeprom_init()
 {
     register_io(EEPROM_EECR, eeprom_read_eecr, eeprom_write_eecr);
     register_io(EEPROM_EEDR, eeprom_read_eedr, eeprom_write_eedr);
     register_io(EEPROM_EEARL, eeprom_read_eearl, eeprom_write_eearl);
     register_io(EEPROM_EEARH, eeprom_read_eearh, eeprom_write_eearh);
-
-    LoadHex("emulino.eeprom", EEPROM, EEPROM_SIZE);
 }

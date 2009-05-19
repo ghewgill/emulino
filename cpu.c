@@ -1240,6 +1240,11 @@ void cpu_load_flash(u8 *buf, u32 bufsize)
     memcpy(Program, buf, bufsize);
 }
 
+void cpu_load_eeprom(u8 *buf, u32 bufsize)
+{
+    eeprom_load(buf, bufsize);
+}
+
 void cpu_reset()
 {
     PC = 0;

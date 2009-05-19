@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-u32 LoadBinary(const char *fn, u8 *buf, u32 bufsize)
+u32 load_binary(const char *fn, u8 *buf, u32 bufsize)
 {
     fprintf(stderr, "emulino: Loading binary image: %s\n", fn);
     FILE *f = fopen(fn, "rb");
@@ -39,7 +39,7 @@ u32 LoadBinary(const char *fn, u8 *buf, u32 bufsize)
     return r;
 }
 
-u32 LoadHex(const char *fn, u8 *buf, u32 bufsize)
+u32 load_hex(const char *fn, u8 *buf, u32 bufsize)
 {
     fprintf(stderr, "emulino: Loading hex image: %s\n", fn);
     FILE *f = fopen(fn, "r");
@@ -84,12 +84,11 @@ u32 LoadHex(const char *fn, u8 *buf, u32 bufsize)
     return m;
 }
 
-u32 Load(const char *fn, u8 *buf, u32 bufsize)
+u32 load_file(const char *fn, u8 *buf, u32 bufsize)
 {
     FILE *f = fopen(fn, "r");
     if (f == 0) {
-        perror(fn);
-        exit(1);
+        return 0;
     }
     char s[100];
     fgets(s, sizeof(s), f);
@@ -97,13 +96,13 @@ u32 Load(const char *fn, u8 *buf, u32 bufsize)
     u32 r = 0;
     int n;
     if (sscanf(s, ":%02x", &n) == 1 && strcspn(s, "\r\n") == 11+2*n) {
-        r = LoadHex(fn, buf, bufsize);
+        r = load_hex(fn, buf, bufsize);
         if (r == 0) {
             perror(fn);
             exit(1);
         }
     } else {
-        r = LoadBinary(fn, buf, bufsize);
+        r = load_binary(fn, buf, bufsize);
     }
     return r;
 }

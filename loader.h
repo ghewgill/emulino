@@ -20,4 +20,4 @@
 
 #include "util.h"
 
-u32 Load(const char *fn, u8 *buf, u32 bufsize);
+u32 load_file(const char *fn, u8 *buf, u32 bufsize);

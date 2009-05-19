@@ -23,17 +23,25 @@
 #define PROGRAM_SIZE_WORDS  0x10000
 #define DATA_SIZE_BYTES     0x900
 
+#define PIN_PORTB   1
+#define PIN_PORTC   9
+#define PIN_PORTD   17
+
 typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);
 typedef void (*PollFunction)();
+typedef void (*PinFunction)(int pin, bool state);
 
 void irq(int n);
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf);
 void register_poll(PollFunction pf);
+void out_pin(int pin, bool state);
 
 void cpu_init();
 void cpu_load_flash(u8 *buf, u32 bufsize);
 void cpu_load_eeprom(u8 *buf, u32 bufsize);
 void cpu_reset();
 void cpu_run();
+void cpu_set_pin(int pin, bool state);
+void cpu_pin_callback(int pin, PinFunction f);

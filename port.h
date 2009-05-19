@@ -18,4 +18,7 @@
  * along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "util.h"
+
 void port_init();
+void port_pin(int pin, bool state);

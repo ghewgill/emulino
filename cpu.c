@@ -93,6 +93,7 @@ int PendingIRQ[MAX_IRQ];
 u16 PC;
 u32 Cycle;
 u32 LastPoll;
+PinFunction PinCallback[PIN_PORTD+9];
 
 COMPILE_ASSERT(sizeof(Data.SREG) == 1);
 COMPILE_ASSERT(((u8 *)&Data.SP) - Data._Bytes == 0x5d);
@@ -1214,6 +1215,13 @@ void register_poll(PollFunction pf)
     PollFunctions[PollFunctionCount++] = pf;
 }
 
+void out_pin(int pin, bool state)
+{
+    if (PinCallback[pin] != NULL) {
+        PinCallback[pin](pin, state);
+    }
+}
+
 void cpu_init()
 {
     eeprom_init();
@@ -1280,4 +1288,18 @@ void cpu_run()
             break;
         }
     }
+}
+
+void cpu_set_pin(int pin, bool state)
+{
+    assert(pin >= 0);
+    assert(pin < LENGTHOF(PinCallback));
+    port_pin(pin, state);
+}
+
+void cpu_pin_callback(int pin, PinFunction f)
+{
+    assert(pin >= 0);
+    assert(pin < LENGTHOF(PinCallback));
+    PinCallback[pin] = f;
 }

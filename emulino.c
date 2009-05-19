@@ -24,6 +24,11 @@
 #include "cpu.h"
 #include "loader.h"
 
+void blink(int pin, bool state)
+{
+    printf("LED %d\n", state);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -45,6 +50,7 @@ int main(int argc, char *argv[])
     cpu_init();
     cpu_load_flash(prog, progsize);
     cpu_load_eeprom(eeprom, eepromsize);
+    cpu_pin_callback(PIN_PORTB+5, blink);
     for (;;) {
         cpu_run();
     }

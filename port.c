@@ -20,49 +20,92 @@
 
 #include "port.h"
 
+#include <stdio.h>
+
 #include "cpu.h"
 
-#define PORT_PINB   0x23
-#define PORT_DDRB   0x24
-#define PORT_PORTB  0x25
+#define PORT_BASE   0x23
 
-u8 PINB;
-u8 DDRB;
-u8 PORTB;
+#define INDEX_PIN   0
+#define INDEX_DDR   1
+#define INDEX_PORT  2
+
+u8 PIN[3];
+u8 DDR[3];
+u8 PORT[3];
+
+inline int port(u16 addr)
+{
+    return (addr - PORT_BASE) / 3;
+}
 
 u8 port_pin_read(u16 addr)
 {
-    return (PINB & ~DDRB) | (PORTB & DDRB);
+    int p = port(addr);
+    return (PIN[p] & ~DDR[p]) | (PORT[p] & DDR[p]);
 }
 
 void port_pin_write(u16 addr, u8 value)
 {
-    PORTB ^= value;
+    int p = port(addr);
+    PORT[p] ^= value;
 }
 
 u8 port_ddr_read(u16 addr)
 {
-    return DDRB;
+    int p = port(addr);
+    return DDR[p];
 }
 
 void port_ddr_write(u16 addr, u8 value)
 {
-    DDRB = value;
+    int p = port(addr);
+    DDR[p] = value;
 }
 
 u8 port_data_read(u16 addr)
 {
-    return PORTB;
+    int p = port(addr);
+    return PORT[p];
 }
 
 void port_data_write(u16 addr, u8 value)
 {
-    PORTB = value;
+    int p = port(addr);
+    u8 prev = PORT[p];
+    PORT[p] = value;
+    u8 diff = (prev ^ PORT[p]) & DDR[p];
+    int pin = 7;
+    u8 bit;
+    for (bit = 0x80; bit != 0; bit >>= 1, pin--) {
+        if (diff & bit) {
+            out_pin(PIN_PORTB+pin, (PORT[p] & bit) != 0);
+        }
+    }
+}
+
+void port_pin(int pin, bool state)
+{
+    if (pin >= PIN_PORTB && pin < PIN_PORTB+8) {
+        int p = pin - PIN_PORTB;
+        PIN[0] = (PIN[0] & ~BIT(p)) | ((state ? 1 : 0) << p);
+    }
+    if (pin >= PIN_PORTC && pin < PIN_PORTC+8) {
+        int p = pin - PIN_PORTC;
+        PIN[1] = (PIN[1] & ~BIT(p)) | ((state ? 1 : 0) << p);
+    }
+    if (pin >= PIN_PORTD && pin < PIN_PORTD+8) {
+        int p = pin - PIN_PORTD;
+        PIN[2] = (PIN[2] & ~BIT(p)) | ((state ? 1 : 0) << p);
+    }
 }
 
 void port_init()
 {
-    register_io(PORT_PINB, port_pin_read, port_pin_write);
-    register_io(PORT_DDRB, port_ddr_read, port_ddr_write);
-    register_io(PORT_PORTB, port_data_read, port_data_write);
+    int i;
+    for (i = 0; i < 3; i++) {
+        register_io(PORT_BASE + 3*i + INDEX_PIN, port_pin_read, port_pin_write);
+        register_io(PORT_BASE + 3*i + INDEX_DDR, port_ddr_read, port_ddr_write);
+        register_io(PORT_BASE + 3*i + INDEX_PORT, port_data_read, port_data_write);
+    }
 }

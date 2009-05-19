@@ -20,4 +20,12 @@
 
 #include "util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 u32 load_file(const char *fn, u8 *buf, u32 bufsize);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

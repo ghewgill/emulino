@@ -32,6 +32,10 @@ typedef void (*WriteFunction)(u16 addr, u8 value);
 typedef void (*PollFunction)();
 typedef void (*PinFunction)(int pin, bool state);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void irq(int n);
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf);
@@ -45,3 +49,7 @@ void cpu_reset();
 void cpu_run();
 void cpu_set_pin(int pin, bool state);
 void cpu_pin_callback(int pin, PinFunction f);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

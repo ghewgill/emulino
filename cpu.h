@@ -31,7 +31,6 @@ void irq(int n);
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf);
 void register_poll(PollFunction pf);
-bool LoadHex(const char *fn, u8 *data, unsigned int size);
 
 void cpu_init();
 void cpu_load_flash(u8 *buf, u32 bufsize);

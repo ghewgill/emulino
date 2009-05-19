@@ -28,6 +28,7 @@
 #include "util.h"
 
 #include "eeprom.h"
+#include "port.h"
 #include "timer.h"
 #include "usart.h"
 
@@ -1196,14 +1197,6 @@ static void iowrite(u16 addr, u8 value)
     if (f != NULL) {
         f(addr, value);
     }
-    switch (addr) {
-    case 0x25:
-        fprintf(stderr, "PORTB: %02x\n", value);
-        break;
-    case 0x2b:
-        fprintf(stderr, "PORTD: %02x\n", value);
-        break;
-    }
     Data._Bytes[addr] = value;
 }
 
@@ -1224,6 +1217,7 @@ void register_poll(PollFunction pf)
 void cpu_init()
 {
     eeprom_init();
+    port_init();
     timer_init();
     usart_init();
 

@@ -35,6 +35,8 @@ typedef int bool;
 
 #define BIT(b) (1 << (b))
 
+#define LENGTHOF(x) (sizeof(x) / sizeof((x)[0]))
+
 #define COMPILE_ASSERT(x) extern int __assertion[(x) ? 1 : -1]
 
 #endif // __UTIL_H

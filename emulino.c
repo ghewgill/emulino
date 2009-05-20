@@ -24,9 +24,9 @@
 #include "cpu.h"
 #include "loader.h"
 
-void blink(int pin, bool state)
+void pinchange(int pin, bool state)
 {
-    printf("LED %d\n", state);
+    fprintf(stderr, "pin %d %d\n", pin, state);
 }
 
 int main(int argc, char *argv[])
@@ -50,7 +50,12 @@ int main(int argc, char *argv[])
     cpu_init();
     cpu_load_flash(prog, progsize);
     cpu_load_eeprom(eeprom, eepromsize);
-    cpu_pin_callback(PIN_PORTB+5, blink);
+    int i;
+    for (i = 0; i < 8; i++) {
+        cpu_pin_callback(PIN_PORTB+i, pinchange);
+        cpu_pin_callback(PIN_PORTC+i, pinchange);
+        cpu_pin_callback(PIN_PORTD+i, pinchange);
+    }
     for (;;) {
         cpu_run();
     }

@@ -23,9 +23,10 @@
 #define PROGRAM_SIZE_WORDS  0x10000
 #define DATA_SIZE_BYTES     0x900
 
-#define PIN_PORTB   1
-#define PIN_PORTC   9
-#define PIN_PORTD   17
+#define PIN_PORTB   0
+#define PIN_PORTC   8
+#define PIN_PORTD   16
+#define PIN_COUNT   (PIN_PORTD + 8)
 
 typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);

@@ -93,7 +93,7 @@ int PendingIRQ[MAX_IRQ];
 u16 PC;
 u32 Cycle;
 u32 LastPoll;
-PinFunction PinCallback[PIN_PORTD+9];
+PinFunction PinCallback[PIN_COUNT];
 
 COMPILE_ASSERT(sizeof(Data.SREG) == 1);
 COMPILE_ASSERT(((u8 *)&Data.SP) - Data._Bytes == 0x5d);

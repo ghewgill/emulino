@@ -79,7 +79,7 @@ void port_data_write(u16 addr, u8 value)
     u8 bit;
     for (bit = 0x80; bit != 0; bit >>= 1, pin--) {
         if (diff & bit) {
-            out_pin(PIN_PORTB+pin, (PORT[p] & bit) != 0);
+            out_pin(PIN_PORTB+8*p+pin, (PORT[p] & bit) != 0);
         }
     }
 }

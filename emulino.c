@@ -61,5 +61,6 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    fprintf(stderr, "cycles: %lu\n", cpu_get_cycles());
     return 0;
 }

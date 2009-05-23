@@ -1306,3 +1306,8 @@ void cpu_pin_callback(int pin, PinFunction f)
     assert(pin < LENGTHOF(PinCallback));
     PinCallback[pin] = f;
 }
+
+u32 cpu_get_cycles()
+{
+    return Cycle;
+}

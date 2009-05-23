@@ -53,6 +53,7 @@ void cpu_reset();
 int cpu_run();
 void cpu_set_pin(int pin, bool state);
 void cpu_pin_callback(int pin, PinFunction f);
+u32 cpu_get_cycles();
 
 #ifdef __cplusplus
 } // extern "C"

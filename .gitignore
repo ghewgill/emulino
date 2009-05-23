@@ -1,6 +1,7 @@
 .sconsign*
 .*.swp
 *.o
+*.moc
 avr.inc
 emulino
 emulino.eeprom

@@ -24,9 +24,16 @@
 #include "cpu.h"
 #include "loader.h"
 
+bool pins[PIN_COUNT];
+
 void pinchange(int pin, bool state)
 {
     fprintf(stderr, "pin %d %d\n", pin, state);
+    pins[pin] = state;
+    fprintf(stderr, "pins %d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d\n",
+        pins[ 0], pins[ 1], pins[ 2], pins[ 3], pins[ 4], pins[ 5], pins[ 6], pins[ 7],
+        pins[ 8], pins[ 9], pins[10], pins[11], pins[12], pins[13], pins[14], pins[15],
+        pins[16], pins[17], pins[18], pins[19], pins[20], pins[21], pins[22], pins[23]);
 }
 
 int main(int argc, char *argv[])

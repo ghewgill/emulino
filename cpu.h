@@ -28,6 +28,9 @@
 #define PIN_PORTD   16
 #define PIN_COUNT   (PIN_PORTD + 8)
 
+#define CPU_RUN     0
+#define CPU_HALT    1
+
 typedef u8 (*ReadFunction)(u16 addr);
 typedef void (*WriteFunction)(u16 addr, u8 value);
 typedef void (*PollFunction)();
@@ -47,7 +50,7 @@ void cpu_init();
 void cpu_load_flash(u8 *buf, u32 bufsize);
 void cpu_load_eeprom(u8 *buf, u32 bufsize);
 void cpu_reset();
-void cpu_run();
+int cpu_run();
 void cpu_set_pin(int pin, bool state);
 void cpu_pin_callback(int pin, PinFunction f);
 

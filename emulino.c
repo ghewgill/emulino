@@ -57,7 +57,9 @@ int main(int argc, char *argv[])
         cpu_pin_callback(PIN_PORTD+i, pinchange);
     }
     for (;;) {
-        cpu_run();
+        if (cpu_run() == CPU_HALT) {
+            break;
+        }
     }
     return 0;
 }

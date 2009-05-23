@@ -90,6 +90,7 @@ WriteFunction IOWrite[0x100];
 PollFunction PollFunctions[MAX_POLL_FUNCTIONS];
 int PollFunctionCount;
 int PendingIRQ[MAX_IRQ];
+int State;
 u16 PC;
 u32 Cycle;
 u32 LastPoll;
@@ -1158,9 +1159,9 @@ static void do_WDR(u16 instr)
     Cycle++;
 }
 
-static void do_exit(u16 instr)
+static void do_halt(u16 instr)
 {
-    exit(0);
+    State = CPU_HALT;
 }
 
 #include "avr.inc"
@@ -1230,9 +1231,9 @@ void cpu_init()
     usart_init();
 
     // AVR programs often end with a jump-to-self after calling main()
-    // so we make that particular opcode do an exit() instead of
-    // looping forever
-    Instr[0xcfff] = do_exit;
+    // so we make that particular opcode return a special result
+    // from cpu_run() instead of looping forever
+    Instr[0xcfff] = do_halt;
 
     cpu_reset();
 }
@@ -1253,11 +1254,12 @@ void cpu_reset()
     Cycle = 0;
     Data.SP = DATA_SIZE_BYTES - 1;
     LastPoll = 0;
+    State = CPU_RUN;
 }
 
-void cpu_run()
+int cpu_run()
 {
-    for (;;) {
+    while (State == CPU_RUN) {
         #ifdef TRACE
             int i;
             for (i = 0; i < 24; i++) {
@@ -1288,6 +1290,7 @@ void cpu_run()
             break;
         }
     }
+    return State;
 }
 
 void cpu_set_pin(int pin, bool state)

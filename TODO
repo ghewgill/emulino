@@ -1,0 +1,12 @@
+CPU core:
+- More useful built-in peripheral implementations
+- Analog inputs and outputs
+- PWM outputs
+- Cycle-correct emulation including interrupt handling
+- Interactive AVR code debugger (gdb RSP adapter?)
+
+GUI:
+- Integration with the Arduino IDE as a separate run target (instead of avrdude)
+- A GUI framework around the emulator with a full-noise visual debugger
+- Virtual oscilloscope
+- Drag and drop circuit components (integration with Fritzing?)

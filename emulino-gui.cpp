@@ -13,16 +13,27 @@
 class EmulinoApp: public QApplication {
     Q_OBJECT
 public:
-    EmulinoApp(int &argc, char *argv[]): QApplication(argc, argv) {}
+    EmulinoApp(int &argc, char *argv[]);
 public slots:
     void onIdle();
     void onButtonPress();
     void onButtonRelease();
+private:
+    QTimer timer;
 };
+
+EmulinoApp::EmulinoApp(int &argc, char *argv[])
+ : QApplication(argc, argv)
+{
+    connect(&timer, SIGNAL(timeout()), this, SLOT(onIdle()));
+    timer.start(0);
+}
 
 void EmulinoApp::onIdle()
 {
-    cpu_run();
+    if (cpu_run() == CPU_HALT) {
+        timer.stop();
+    }
 }
 
 void EmulinoApp::onButtonPress()
@@ -286,10 +297,6 @@ int main(int argc, char *argv[])
     mapper.connect(Pins[PIN_PORTD+2], 6);
 
     frame.show();
-
-    QTimer timer(&a);
-    QObject::connect(&timer, SIGNAL(timeout()), &a, SLOT(onIdle()));
-    timer.start(0);
 
     QObject::connect(&hello, SIGNAL(pressed()), &a, SLOT(onButtonPress()));
     QObject::connect(&hello, SIGNAL(released()), &a, SLOT(onButtonRelease()));

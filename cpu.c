@@ -91,6 +91,7 @@ WriteFunction IOWrite[0x100];
 PollFunction PollFunctions[MAX_POLL_FUNCTIONS];
 int PollFunctionCount;
 int PendingIRQ[MAX_IRQ];
+int PendingIRQCount;
 int State;
 u16 PC;
 u32 Cycle;
@@ -1170,12 +1171,18 @@ static void do_halt(u16 instr)
 void irq(int n)
 {
     if (Data.SREG.I) {
+        #ifdef TRACE
+            if (n != 17) { // timer
+                fprintf(stderr, "irq: %d\n", n);
+            }
+        #endif
         write(Data.SP--, PC >> 8);
         write(Data.SP--, PC & 0xff);
         PC = (n - 1) << 1;
         Data.SREG.I = 0;
     } else {
         PendingIRQ[n] = 1;
+        PendingIRQCount++;
     }
 }
 
@@ -1201,6 +1208,20 @@ static void iowrite(u16 addr, u8 value)
         f(addr, value);
     }
     Data._Bytes[addr] = value;
+    if (addr == 0x5f && PendingIRQCount > 0 && Data.SREG.I) {
+        int i;
+        for (i = 0; i < MAX_IRQ; i++) {
+            if (PendingIRQ[i]) {
+                #ifdef TRACE
+                    fprintf(stderr, "pending irq %d\n", i);
+                #endif
+                PendingIRQ[i] = 0;
+                PendingIRQCount--;
+                irq(i);
+                break;
+            }
+        }
+    }
 }
 
 void register_io(u16 addr, ReadFunction rf, WriteFunction wf)

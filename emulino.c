@@ -18,8 +18,10 @@
  * along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "cpu.h"
 #include "loader.h"
@@ -44,10 +46,41 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    int inf = 0;
+    int outf = 1;
+
+    int a = 1;
+    while (a < argc) {
+        if (argv[a][0] == '-') {
+            if (strcmp(argv[a], "-io") == 0) {
+                a++;
+                char fn[200];
+                snprintf(fn, sizeof(fn), "%s.in", argv[a]);
+                inf = open(fn, O_RDONLY);
+                if (inf == -1) {
+                    perror(fn);
+                    exit(1);
+                }
+                snprintf(fn, sizeof(fn), "%s.out", argv[a]);
+                outf = open(fn, O_WRONLY);
+                if (outf == -1) {
+                    perror(fn);
+                    exit(1);
+                }
+            } else {
+                fprintf(stderr, "Unknown option: %s\n", argv[a]);
+                exit(1);
+            }
+        } else {
+            break;
+        }
+        a++;
+    }
+
     u8 prog[PROGRAM_SIZE_WORDS*2];
-    u32 progsize = load_file(argv[1], prog, sizeof(prog));
+    u32 progsize = load_file(argv[a], prog, sizeof(prog));
     if (progsize == 0) {
-        perror(argv[1]);
+        perror(argv[a]);
         exit(1);
     }
 
@@ -57,6 +90,10 @@ int main(int argc, char *argv[])
     cpu_init();
     cpu_load_flash(prog, progsize);
     cpu_load_eeprom(eeprom, eepromsize);
+
+    cpu_usart_set_input(inf);
+    cpu_usart_set_output(outf);
+
     int i;
     for (i = 0; i < 8; i++) {
         cpu_pin_callback(PIN_PORTB+i, pinchange);

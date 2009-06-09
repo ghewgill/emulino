@@ -1270,6 +1270,16 @@ void cpu_load_eeprom(u8 *buf, u32 bufsize)
     eeprom_load(buf, bufsize);
 }
 
+void cpu_usart_set_output(int fd)
+{
+    usart_set_output(fd);
+}
+
+void cpu_usart_set_input(int fd)
+{
+    usart_set_input(fd);
+}
+
 void cpu_reset()
 {
     PC = 0;

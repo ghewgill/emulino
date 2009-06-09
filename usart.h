@@ -19,3 +19,5 @@
  */
 
 void usart_init();
+void usart_set_output(int fd);
+void usart_set_input(int fd);

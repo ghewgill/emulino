@@ -16,6 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
 
-env = Environment(CFLAGS = "-Wall -Werror")
-env.Program("emulino", ["emulino.c", "loader.c", "cpu.c", "eeprom.c", "port.c", "timer.c", "usart.c"])
+env = Environment(CFLAGS = "-Wall")
+env.Program("emulino", ["src/emulino.c", "src/loader.c", "src/cpu.c", "src/eeprom.c", "src/port.c", "src/timer.c", "src/usart.c"])
 env.Command("avr.inc", ["mkinst.py", "instructions.txt"], "/opt/local/bin/python2.5 mkinst.py")

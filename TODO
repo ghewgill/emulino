@@ -1,5 +1,7 @@
 CPU core:
 - More useful built-in peripheral implementations
+- Watchdog support
+- Fix UART bugs. WHy do you need delay(1)'s everywhere?
 - Analog inputs and outputs
 - PWM outputs
 - Cycle-correct emulation including interrupt handling

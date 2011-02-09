@@ -1188,6 +1188,22 @@ void irq(int n)
     }
 }
 
+static void pending_irqs() {
+    int i;
+    for (i = 0; i < MAX_IRQ; i++) {
+        if (PendingIRQ[i]) {
+#ifdef TRACE
+            fprintf(stderr, "pending irq %d\n", i);
+#endif
+            PendingIRQ[i] = 0;
+            PendingIRQCount--;
+            irq(i);
+            break;
+        }
+    }
+}
+
+
 static u8 ioread(u16 addr)
 {
     //fprintf(stderr, "ioread %04x\n", addr);
@@ -1211,18 +1227,7 @@ static void iowrite(u16 addr, u8 value)
     }
     Data._Bytes[addr] = value;
     if (addr == 0x5f && PendingIRQCount > 0 && Data.SREG.I) {
-        int i;
-        for (i = 0; i < MAX_IRQ; i++) {
-            if (PendingIRQ[i]) {
-                #ifdef TRACE
-                    fprintf(stderr, "pending irq %d\n", i);
-                #endif
-                PendingIRQ[i] = 0;
-                PendingIRQCount--;
-                irq(i);
-                break;
-            }
-        }
+        pending_irqs();
     }
 }
 
@@ -1315,13 +1320,17 @@ int cpu_run()
         #endif
         u16 instr = Program[PC++];
         Instr[instr](instr);
-        if (Cycle - LastPoll > 10000) {
+        if (Cycle - LastPoll > 1000) {
             LastPoll = Cycle;
             int i;
             for (i = 0; i < PollFunctionCount; i++) {
                 PollFunctions[i]();
             }
             break;
+        }
+
+        if (PendingIRQCount > 0 && Data.SREG.I) {
+            pending_irqs();
         }
     }
     return State;

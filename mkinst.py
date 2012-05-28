@@ -73,7 +73,7 @@ for i in instr:
             assert table[mask1 | sx] is None
         table[mask1 | sx] = i[1]
 
-f = open("avr.inc", "w")
+f = open("src/avr.inc", "w")
 print >>f, "Handler Instr[0x10000] = {"
 f.write("".join(["  do_%s,\n" % (x if x else "BREAK") for x in table]))
 print >>f, "};"

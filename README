@@ -1,0 +1,21 @@
+emulino is a very basic AVR ATMEGA emulator
+
+The list of things it gets wrong and doesn't support is probably
+longer than the list of things that work properly.
+
+On the bright side it can still be useful for rapid testing of
+code changes without having to upload anything to hardware.
+
+As long as you don't care about all sorts of actually useful
+things, like PWM, or using the ADC, or the timing being at all
+accurate.
+
+Things that work
+ * USART
+ * Digital I/O
+
+Things that don't work
+ * ADC
+ * PWM
+ * SPI/I2C
+ * Anything timing related

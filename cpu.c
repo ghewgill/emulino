@@ -446,13 +446,17 @@ static void do_ELPM_1(u16 instr)
 static void do_ELPM_2(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = ((u8 *)Program)[Data.Z];
+    Cycle += 3;
 }
 
 static void do_ELPM_3(u16 instr)
 {
     trace(__FUNCTION__);
-    unimplemented(__FUNCTION__);
+    u16 d = ((instr >> 4) & 0x1f);
+    Data.Reg[d] = ((u8 *)Program)[Data.Z++];
+    Cycle += 3;
 }
 
 static void do_EOR(u16 instr)
